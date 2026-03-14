@@ -56,6 +56,7 @@ const DeliveryHistory = () => {
                   <th className="text-left px-4 py-3">Date</th>
                   <th className="text-left px-4 py-3">Scheduled</th>
                   <th className="text-left px-4 py-3">Delivered</th>
+                  <th className="text-left px-4 py-3">Photo</th>
                   <th className="text-left px-4 py-3">Status</th>
                 </tr>
               </thead>
@@ -65,6 +66,13 @@ const DeliveryHistory = () => {
                     <td className="px-4 py-3 text-slate-300 text-sm">{formatDate(d.date)}</td>
                     <td className="px-4 py-3"><span className="badge-blue">{formatMl(d.milkScheduledMl || 0)}</span></td>
                     <td className="px-4 py-3"><span className="text-sm text-slate-300">{d.status === 'delivered' ? formatMl(d.milkDeliveredMl) : '-'}</span></td>
+                    <td className="px-4 py-3">
+                      {d.photoUrl ? (
+                        <a href={d.photoUrl} target="_blank" rel="noreferrer" className="text-xs text-blue-400 hover:text-blue-300 underline">View Photo</a>
+                      ) : (
+                        <span className="text-xs text-slate-500">-</span>
+                      )}
+                    </td>
                     <td className="px-4 py-3">{statusBadge[d.status] || d.status}</td>
                   </tr>
                 ))}

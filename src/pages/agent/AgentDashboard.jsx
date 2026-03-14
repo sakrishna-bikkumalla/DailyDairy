@@ -4,6 +4,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import { getDeliveriesByAgent, getDeliveryStats } from '../../services/deliveryService'
 import { getTodayString, formatDate } from '../../utils/dateUtils'
 import { formatMl } from '../../utils/mlUtils'
+import DeliveryProgressBar from '../../components/DeliveryProgressBar'
 
 const AgentDashboard = () => {
   const { user } = useAuth()
@@ -19,10 +20,9 @@ const AgentDashboard = () => {
       .finally(() => setLoading(false))
   }, [user])
 
-  const completed = deliveries.filter(d => d.status === 'delivered').length
+  const done = deliveries.filter(d => d.status !== 'pending').length
   const pending = deliveries.filter(d => d.status === 'pending').length
   const total = deliveries.length
-  const progress = total > 0 ? Math.round((completed / total) * 100) : 0
   const totalMl = deliveries.reduce((s, d) => s + (d.milkScheduledMl || 0), 0)
 
   return (
@@ -43,7 +43,7 @@ const AgentDashboard = () => {
               <p className="text-xs text-slate-400 mt-1 flex items-center justify-center gap-1"><MdLocalShipping />Total</p>
             </div>
             <div className="card p-4 text-center border border-dairy-green-700/50">
-              <p className="text-3xl font-bold text-dairy-green-400">{completed}</p>
+              <p className="text-3xl font-bold text-dairy-green-400">{done}</p>
               <p className="text-xs text-slate-400 mt-1 flex items-center justify-center gap-1"><MdCheckCircle />Done</p>
             </div>
             <div className="card p-4 text-center border border-amber-700/50">
@@ -53,19 +53,12 @@ const AgentDashboard = () => {
           </div>
 
           {/* Progress */}
-          <div className="card mb-6">
-            <div className="flex justify-between mb-2">
-              <span className="text-slate-300 text-sm font-medium">Delivery Progress</span>
-              <span className="text-dairy-green-400 font-bold text-lg">{progress}%</span>
-            </div>
-            <div className="h-4 bg-slate-700 rounded-full overflow-hidden">
-              <div className="h-full bg-gradient-to-r from-dairy-green-600 to-dairy-green-400 rounded-full transition-all duration-700" style={{ width: `${progress}%` }} />
-            </div>
-            <div className="flex justify-between mt-2 text-xs text-slate-500">
-              <span>{completed} completed</span>
-              <span>{formatMl(totalMl)} total</span>
-            </div>
-          </div>
+          {total > 0 && (
+            <DeliveryProgressBar total={total} done={done}>
+              <span>{done} done</span>
+              <span>{formatMl(totalMl)} scheduled today</span>
+            </DeliveryProgressBar>
+          )}
 
           {/* Recent deliveries preview */}
           {deliveries.length > 0 && (
@@ -80,7 +73,9 @@ const AgentDashboard = () => {
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-xs text-slate-400">{formatMl(d.milkScheduledMl)}</span>
-                      {d.status === 'delivered' ? <span className="badge-green">Done</span> : <span className="badge-amber">Pending</span>}
+                      {d.status === 'delivered' && <span className="badge-green">Done</span>}
+                      {d.status === 'pending' && <span className="badge-amber">Pending</span>}
+                      {d.status === 'skipped' && <span className="badge-red">Skipped</span>}
                     </div>
                   </div>
                 ))}

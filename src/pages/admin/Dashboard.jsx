@@ -12,6 +12,7 @@ import { getDeliveryStats } from '../../services/deliveryService'
 import { getRequests } from '../../services/requestService'
 import { getTodayString, formatDateTime } from '../../utils/dateUtils'
 import { formatMl } from '../../utils/mlUtils'
+import DeliveryProgressBar from '../../components/DeliveryProgressBar'
 
 const AdminDashboard = () => {
   const [stats, setStats] = useState({ total: 0, completed: 0, pending: 0, skipped: 0, totalMlScheduled: 0, totalMlDelivered: 0 })
@@ -43,8 +44,6 @@ const AdminDashboard = () => {
     load()
   }, [])
 
-  const progress = stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0
-
   const reqTypeLabel = { extra_milk: 'Extra Milk', pause_delivery: 'Pause Delivery', evening_milk: 'Evening Milk' }
 
   return (
@@ -69,32 +68,24 @@ const AdminDashboard = () => {
           </div>
 
           {/* Today progress */}
-          <div className="card mb-6">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h3 className="font-semibold text-white">Today's Delivery Progress</h3>
-                <p className="text-xs text-slate-500 mt-0.5">{today}</p>
-              </div>
-              <span className="text-2xl font-bold text-dairy-green-400">{progress}%</span>
+          <DeliveryProgressBar 
+            total={stats.total} 
+            done={stats.completed + stats.skipped} 
+            label={`Today's Delivery Progress · ${today}`}
+          >
+            <div className="flex items-center gap-6 w-full">
+              <span className="flex items-center gap-1 text-dairy-green-400"><MdCheckCircle />Done: {stats.completed}</span>
+              <span className="flex items-center gap-1 text-amber-400"><MdPending />Pending: {stats.pending}</span>
+              {stats.skipped > 0 && <span className="flex items-center gap-1 text-red-400">Skipped: {stats.skipped}</span>}
             </div>
-            <div className="h-3 bg-slate-700 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-gradient-to-r from-dairy-green-600 to-dairy-green-400 rounded-full transition-all duration-700"
-                style={{ width: `${progress}%` }}
-              />
+          </DeliveryProgressBar>
+          
+          {stats.total === 0 && (
+            <div className="mb-6 p-4 border border-slate-700 rounded-xl text-center">
+              <p className="text-slate-400 mb-2">No deliveries generated for today.</p>
+              <Link to="/admin/deliveries" className="btn-primary text-sm inline-block px-4 py-2">Go to Daily Deliveries</Link>
             </div>
-            <div className="flex items-center gap-6 mt-4 text-sm">
-              <span className="flex items-center gap-2 text-dairy-green-400"><MdCheckCircle />Completed: {stats.completed}</span>
-              <span className="flex items-center gap-2 text-amber-400"><MdPending />Pending: {stats.pending}</span>
-              {stats.skipped > 0 && <span className="flex items-center gap-2 text-red-400">Skipped: {stats.skipped}</span>}
-            </div>
-            {stats.total === 0 && (
-              <div className="mt-4 p-3 bg-amber-900/30 border border-amber-700/30 rounded-xl text-amber-300 text-sm">
-                No deliveries generated for today.{' '}
-                <Link to="/admin/deliveries" className="underline hover:text-amber-200">Go to Daily Deliveries</Link> to generate them.
-              </div>
-            )}
-          </div>
+          )}
 
           <div className="grid lg:grid-cols-2 gap-6">
             {/* Milk stats */}

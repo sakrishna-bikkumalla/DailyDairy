@@ -1,93 +1,100 @@
-# FarmtoHome
+# FarmToHome: Smart Dairy Delivery Management System
 
+A full-stack, comprehensive web application built to digitize and streamline milk delivery operations for dairy vendors. The system supports three distinct roles—**Admin (Vendor)**, **Customer**, and **Delivery Agent**—each with their own tailored dashboards, features, and workflows.
 
+---
 
-## Getting started
+## 🚀 Features
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+### 🛡️ Admin (Vendor) Module
+* **Dashboard:** High-level analytics, including total customers, daily delivery progress, and pending requests.
+* **Customer Management:** Full CRUD operations for customers. Capture detailed addresses (Street/Colony, Landmark, Pincode, City, State, Country) and precise GPS locations via an interactive Leaflet map.
+* **Agent Management:** Add and manage delivery personnel.
+* **Daily Deliveries:** Dynamically generate delivery manifests for any given day based on active customer subscriptions. Assign specific agents to specific deliveries.
+* **Manage Subscriptions:** Easily track the lifetime value of every customer. Search customers by name or phone number, and click on them to view lifetime milk delivered, total revenue billed, and a chronological log of all historical deliveries.
+* **Customer Requests:** Review, approve, or reject customer requests (Extra Milk, Morning/Evening specifics, Pauses). Rejecting a request allows the admin to provide a concrete reason (e.g., "No Stock") which is communicated back to the user.
+* **Billing System:** Automated monthly billing calculator that aggregates completed deliveries and computes total amounts due per customer based on custom price-per-liter rates.
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+### 🥛 Customer Module
+* **Dashboard:** View upcoming scheduled deliveries at a glance.
+* **Submit Requests:** 
+  * Request *Extra Milk* or *Morning/Evening Milk*. 
+  * Submit *Custom Requests* specifying exact date, quantity, preferred time (Morning/Evening), and milk type (Cow/Buffalo).
+  * Request a *Pause* in delivery for a specified date range (e.g., going on vacation).
+* **Delivery History:** 
+  * View a visual log of all past deliveries.
+  * See photographic proof of delivery (photos taken by agents at the doorstep).
+* **Request History:** Check the status of special requests (Pending, Approved, Rejected) including polite feedback and rejection reasons from the admin.
 
-## Add your files
+### 🚚 Delivery Agent Module
+* **Agent Dashboard:** Track daily assigned deliveries and completion progress.
+* **Delivery Route:** View an interactive map (Leaflet) plotting all assigned customers for the day. Click on markers to access Google Maps navigation.
+* **Proof of Delivery:** Mark deliveries as completed, optionally adjusting the delivered quantity (e.g., if the customer requested less at the door), and upload a photo of the delivered milk as proof.
 
-* [Create](https://docs.gitlab.com/user/project/repository/web_editor/#create-a-file) or [upload](https://docs.gitlab.com/user/project/repository/web_editor/#upload-a-file) files
-* [Add files using the command line](https://docs.gitlab.com/topics/git/add_files/#add-files-to-a-git-repository) or push an existing Git repository with the following command:
+---
 
+## 🛠️ Technology Stack
+
+* **Frontend:** React.js, Vite
+* **Styling:** Tailwind CSS (Custom dairy-themed color palette: greens, creams, ambers)
+* **Routing:** React Router v6 (Protected Routes based on User Roles)
+* **Mapping & Location:** Leaflet.js, React-Leaflet, OpenStreetMap
+* **Backend / Database:** Firebase Firestore (NoSQL Document Database)
+* **Authentication:** Firebase Auth
+* **Storage:** Cloudinary (for fast, reliable Delivery Photo uploads)
+* **Icons & UI:** React Icons, React Hot Toast
+
+---
+
+## 💻 How to Run Locally
+
+### 1. Prerequisites
+Ensure you have the following installed on your machine:
+* [Node.js](https://nodejs.org/) (v16 or higher)
+* [npm](https://www.npmjs.com/) or [yarn]
+
+### 2. Clone the Repository
+If you haven't already, clone the project and navigate to the root directory:
+```bash
+git clone https://gitlab.com/dairyfoam-project/farmtohome.git
+cd farmtohome
 ```
-cd existing_repo
-git remote add origin https://gitlab.com/dairyfoam-project/farmtohome.git
-git branch -M main
-git push -uf origin main
+
+### 3. Install Dependencies
+Install all required NPM packages:
+```bash
+npm install
 ```
 
-## Integrate with your tools
+### 4. Environment Setup
+The project relies on Firebase and Cloudinary. You must create a `.env` file in the root of the `farmtohome` directory with your specific API keys:
 
-* [Set up project integrations](https://gitlab.com/dairyfoam-project/farmtohome/-/settings/integrations)
+```env
+VITE_FIREBASE_API_KEY=your_api_key
+VITE_FIREBASE_AUTH_DOMAIN=your_project_id.firebaseapp.com
+VITE_FIREBASE_PROJECT_ID=your_project_id
+VITE_FIREBASE_STORAGE_BUCKET=your_project_id.appspot.com
+VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+VITE_FIREBASE_APP_ID=your_app_id
+VITE_CLOUDINARY_CLOUD_NAME=your_cloudinary_name
+VITE_CLOUDINARY_UPLOAD_PRESET=your_upload_preset
+```
 
-## Collaborate with your team
+### 5. Start the Development Server
+Run the Vite development server:
+```bash
+npm run dev
+```
 
-* [Invite team members and collaborators](https://docs.gitlab.com/user/project/members/)
-* [Create a new merge request](https://docs.gitlab.com/user/project/merge_requests/creating_merge_requests/)
-* [Automatically close issues from merge requests](https://docs.gitlab.com/user/project/issues/managing_issues/#closing-issues-automatically)
-* [Enable merge request approvals](https://docs.gitlab.com/user/project/merge_requests/approvals/)
-* [Set auto-merge](https://docs.gitlab.com/user/project/merge_requests/auto_merge/)
+### 6. View the App
+Open your browser and navigate to the local URL provided in your terminal, usually:
+```
+http://localhost:5173
+```
 
-## Test and Deploy
+---
 
-Use the built-in continuous integration in GitLab.
+## 🔐 Login Roles (Demo)
+By default, the login page is equipped with a **Demo Login** section that allows you to bypass email/password entry and log in instantly as an Admin, Customer, or Agent using pre-seeded Firestore data to test the routing and permissions. 
 
-* [Get started with GitLab CI/CD](https://docs.gitlab.com/ci/quick_start/)
-* [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/user/application_security/sast/)
-* [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/topics/autodevops/requirements/)
-* [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/user/clusters/agent/)
-* [Set up protected environments](https://docs.gitlab.com/ci/environments/protected_environments/)
-
-***
-
-# Editing this README
-
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
-
-## Suggestions for a good README
-
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
-
-## Name
-Choose a self-explaining name for your project.
-
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
-
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
-
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
-
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
-
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
-
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
-
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
-
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
-
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
-
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
-
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
-
-## License
-For open source projects, say how it is licensed.
-
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+*Enjoy managing your dairy deliveries efficiently!* 🐄🥛

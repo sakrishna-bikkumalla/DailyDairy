@@ -18,10 +18,37 @@ const ClickMarker = ({ onLocationSelect }) => {
 }
 
 const CustomerForm = ({ initial, onSave, onClose }) => {
+  // Parse saved address string back into granular fields
+  const parseAddress = (addrStr) => {
+    if (!addrStr) return {}
+    const p = addrStr.split(',').map(s => s.trim())
+    if (p.length < 4) return { street: addrStr } // fallback for old unformatted data
+    
+    // Reverse logic: we know pincode is always last, then country, then state, then city.
+    const pincode = p.pop() || ''
+    const country = p.pop() || 'India'
+    const state = p.pop() || ''
+    const city = p.pop() || ''
+    
+    // Whatever is left is street + landmark
+    const landmark = p.length > 1 ? p.pop() : ''
+    const street = p.join(', ') || ''
+
+    return { pincode, country, state, city, landmark, street }
+  }
+
+  const parsed = parseAddress(initial?.address)
+
   const [form, setForm] = useState({
     name: initial?.name || '',
     phone: initial?.phone || '',
-    address: initial?.address || '',
+    street: parsed.street || '',
+    landmark: parsed.landmark || '',
+    pincode: parsed.pincode || '',
+    city: parsed.city || '',
+    state: parsed.state || '',
+    country: parsed.country || 'India',
+    locationUrl: initial?.locationUrl || '',
     dailyMilkMl: initial?.dailyMilkMl || 500,
     pricePerLiter: initial?.pricePerLiter || 60,
     latitude: initial?.latitude || null,
@@ -40,9 +67,35 @@ const CustomerForm = ({ initial, onSave, onClose }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (!form.name || !form.phone) return
+    if (!form.name || !form.phone || !form.street || !form.city || !form.state || !form.pincode) {
+      alert('Please fill in all required address fields.')
+      return
+    }
     setSaving(true)
-    await onSave({ ...form, dailyMilkMl: Number(form.dailyMilkMl), pricePerLiter: Number(form.pricePerLiter) })
+
+    // Construct full address string
+    const parts = [
+      form.street,
+      form.landmark,
+      form.city,
+      form.state,
+      form.country,
+      form.pincode
+    ].filter(Boolean)
+    const fullAddress = parts.join(', ')
+
+    const dataToSave = {
+      name: form.name,
+      phone: form.phone,
+      address: fullAddress, // Save combined string for backwards compatibility
+      locationUrl: form.locationUrl,
+      dailyMilkMl: Number(form.dailyMilkMl),
+      pricePerLiter: Number(form.pricePerLiter),
+      latitude: form.latitude,
+      longitude: form.longitude
+    }
+
+    await onSave(dataToSave)
     setSaving(false)
   }
 
@@ -50,15 +103,15 @@ const CustomerForm = ({ initial, onSave, onClose }) => {
 
   return (
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-      <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl animate-fade-in">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800">
+      <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-lg max-h-[90vh] my-auto flex flex-col shadow-2xl animate-fade-in">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 shrink-0">
           <h2 className="font-bold text-white text-lg">{initial ? 'Edit Customer' : 'Add New Customer'}</h2>
-          <button onClick={onClose} className="p-2 rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition-colors">
+          <button type="button" onClick={onClose} className="p-2 rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition-colors">
             <MdClose className="text-xl" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
+        <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4 overflow-y-auto">
           <div>
             <label className="form-label">Full Name *</label>
             <input className="form-input" value={form.name} onChange={e => set('name', e.target.value)} placeholder="Customer full name" required />
@@ -67,9 +120,82 @@ const CustomerForm = ({ initial, onSave, onClose }) => {
             <label className="form-label">Phone Number *</label>
             <input className="form-input" type="tel" value={form.phone} onChange={e => set('phone', e.target.value)} placeholder="10-digit mobile number" maxLength={10} required />
           </div>
-          <div>
-            <label className="form-label">Address</label>
-            <textarea className="form-input h-20 resize-none" value={form.address} onChange={e => set('address', e.target.value)} placeholder="Full delivery address" />
+          {/* Address Fields */}
+          <div className="space-y-3 p-3 bg-slate-800/50 rounded-xl border border-slate-700/50">
+            <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Delivery Address</h3>
+            
+            <div>
+              <label className="form-label">Street / Colony *</label>
+              <input className="form-input" value={form.street} onChange={e => set('street', e.target.value)} placeholder="House No, Street Name" required />
+            </div>
+            
+            <div>
+              <label className="form-label">Landmark (Optional)</label>
+              <input className="form-input" value={form.landmark} onChange={e => set('landmark', e.target.value)} placeholder="Near hospital, opposite park..." />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="form-label">Pincode *</label>
+                <input className="form-input" type="text" value={form.pincode} onChange={e => set('pincode', e.target.value.replace(/\D/g, '').slice(0, 6))} placeholder="6 Digit PIN" required />
+              </div>
+              <div>
+                <label className="form-label">City *</label>
+                <input className="form-input" value={form.city} onChange={e => set('city', e.target.value)} placeholder="City Name" required />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="form-label">State *</label>
+                <input className="form-input" list="states" value={form.state} onChange={e => set('state', e.target.value)} placeholder="Select State" required />
+                <datalist id="states">
+                  <option value="Andhra Pradesh" />
+                  <option value="Arunachal Pradesh" />
+                  <option value="Assam" />
+                  <option value="Bihar" />
+                  <option value="Chhattisgarh" />
+                  <option value="Goa" />
+                  <option value="Gujarat" />
+                  <option value="Haryana" />
+                  <option value="Himachal Pradesh" />
+                  <option value="Jharkhand" />
+                  <option value="Karnataka" />
+                  <option value="Kerala" />
+                  <option value="Madhya Pradesh" />
+                  <option value="Maharashtra" />
+                  <option value="Manipur" />
+                  <option value="Meghalaya" />
+                  <option value="Mizoram" />
+                  <option value="Nagaland" />
+                  <option value="Odisha" />
+                  <option value="Punjab" />
+                  <option value="Rajasthan" />
+                  <option value="Sikkim" />
+                  <option value="Tamil Nadu" />
+                  <option value="Telangana" />
+                  <option value="Tripura" />
+                  <option value="Uttar Pradesh" />
+                  <option value="Uttarakhand" />
+                  <option value="West Bengal" />
+                  <option value="Andaman and Nicobar Islands" />
+                  <option value="Chandigarh" />
+                  <option value="Dadra and Nagar Haveli and Daman and Diu" />
+                  <option value="Delhi" />
+                  <option value="Jammu and Kashmir" />
+                  <option value="Ladakh" />
+                  <option value="Lakshadweep" />
+                  <option value="Puducherry" />
+                </datalist>
+              </div>
+              <div>
+                <label className="form-label">Country *</label>
+                <input className="form-input" list="countries" value={form.country} onChange={e => set('country', e.target.value)} placeholder="Select Country" required />
+                <datalist id="countries">
+                  <option value="India" />
+                </datalist>
+              </div>
+            </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -80,6 +206,11 @@ const CustomerForm = ({ initial, onSave, onClose }) => {
               <label className="form-label">Price per Liter (₹)</label>
               <input className="form-input" type="number" value={form.pricePerLiter} onChange={e => set('pricePerLiter', e.target.value)} min={1} step={1} />
             </div>
+          </div>
+
+          <div>
+            <label className="form-label">Google Maps URL (Optional)</label>
+            <input className="form-input" type="url" value={form.locationUrl} onChange={e => set('locationUrl', e.target.value)} placeholder="https://maps.app.goo.gl/..." />
           </div>
 
           {/* GPS Location */}

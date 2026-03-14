@@ -124,7 +124,12 @@ const Customers = () => {
                       </td>
                       <td className="px-4 py-3 text-slate-300 text-sm">₹{c.pricePerLiter}/L</td>
                       <td className="px-4 py-3">
-                        {c.latitude && c.longitude ? (
+                        {c.locationUrl ? (
+                          <a href={c.locationUrl} target="_blank" rel="noreferrer"
+                            className="flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300">
+                            <MdLocationOn />Open URL
+                          </a>
+                        ) : c.latitude && c.longitude ? (
                           <a href={`https://maps.google.com/?q=${c.latitude},${c.longitude}`} target="_blank" rel="noreferrer"
                             className="flex items-center gap-1 text-xs text-dairy-green-400 hover:text-dairy-green-300">
                             <MdLocationOn />View Map

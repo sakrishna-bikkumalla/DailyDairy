@@ -3,7 +3,7 @@ import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import {
   MdDashboard, MdPeople, MdLocalShipping, MdDeliveryDining,
-  MdInbox, MdReceipt, MdMap, MdHistory, MdAdd, MdLogout
+  MdInbox, MdReceipt, MdMap, MdHistory, MdAdd, MdLogout, MdAssignment
 } from 'react-icons/md'
 import { GiMilkCarton } from 'react-icons/gi'
 import toast from 'react-hot-toast'
@@ -14,19 +14,20 @@ const adminLinks = [
   { to: '/admin/agents', icon: MdDeliveryDining, label: 'Delivery Agents' },
   { to: '/admin/deliveries', icon: MdLocalShipping, label: 'Daily Deliveries' },
   { to: '/admin/requests', icon: MdInbox, label: 'Requests' },
+  { to: '/admin/subscriptions', icon: MdAssignment, label: 'Subscriptions' },
   { to: '/admin/billing', icon: MdReceipt, label: 'Billing' },
 ]
 
 const customerLinks = [
   { to: '/customer/dashboard', icon: MdDashboard, label: 'Dashboard' },
   { to: '/customer/request', icon: MdAdd, label: 'New Request' },
+  { to: '/customer/requests', icon: MdInbox, label: 'My Requests' },
   { to: '/customer/history', icon: MdHistory, label: 'Delivery History' },
 ]
 
 const agentLinks = [
   { to: '/agent/dashboard', icon: MdDashboard, label: 'Dashboard' },
   { to: '/agent/deliveries', icon: MdLocalShipping, label: 'My Deliveries' },
-  { to: '/agent/map', icon: MdMap, label: 'Map View' },
 ]
 
 const linksByRole = { admin: adminLinks, customer: customerLinks, agent: agentLinks }

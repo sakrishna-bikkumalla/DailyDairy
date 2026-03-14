@@ -11,12 +11,13 @@ import Agents from './pages/admin/Agents'
 import DailyDeliveries from './pages/admin/DailyDeliveries'
 import Requests from './pages/admin/Requests'
 import Billing from './pages/admin/Billing'
+import Subscriptions from './pages/admin/Subscriptions'
 import CustomerDashboard from './pages/customer/CustomerDashboard'
 import SubmitRequest from './pages/customer/SubmitRequest'
+import RequestHistory from './pages/customer/RequestHistory'
 import DeliveryHistory from './pages/customer/DeliveryHistory'
 import AgentDashboard from './pages/agent/AgentDashboard'
 import DeliveryList from './pages/agent/DeliveryList'
-import MapView from './pages/agent/MapView'
 import Layout from './components/Layout'
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -64,6 +65,7 @@ function App() {
             <Route path="deliveries" element={<DailyDeliveries />} />
             <Route path="requests" element={<Requests />} />
             <Route path="billing" element={<Billing />} />
+            <Route path="subscriptions" element={<Subscriptions />} />
           </Route>
 
           {/* Customer Routes */}
@@ -74,6 +76,7 @@ function App() {
           }>
             <Route path="dashboard" element={<CustomerDashboard />} />
             <Route path="request" element={<SubmitRequest />} />
+            <Route path="requests" element={<RequestHistory />} />
             <Route path="history" element={<DeliveryHistory />} />
           </Route>
 
@@ -85,7 +88,6 @@ function App() {
           }>
             <Route path="dashboard" element={<AgentDashboard />} />
             <Route path="deliveries" element={<DeliveryList />} />
-            <Route path="map" element={<MapView />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />

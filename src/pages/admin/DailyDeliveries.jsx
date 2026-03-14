@@ -7,6 +7,7 @@ import { getCustomers } from '../../services/customerService'
 import { getAgents } from '../../services/agentService'
 import { getTodayString, formatDate } from '../../utils/dateUtils'
 import { formatMl } from '../../utils/mlUtils'
+import DeliveryProgressBar from '../../components/DeliveryProgressBar'
 import toast from 'react-hot-toast'
 
 const statusBadge = {
@@ -63,8 +64,6 @@ const DailyDeliveries = () => {
     } catch { toast.error('Failed to assign') }
   }
 
-  const progress = stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0
-
   return (
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
@@ -97,16 +96,9 @@ const DailyDeliveries = () => {
 
       {/* Progress */}
       {stats.total > 0 && (
-        <div className="card mb-6">
-          <div className="flex justify-between mb-2 text-sm">
-            <span className="text-slate-400">Delivery Progress</span>
-            <span className="text-dairy-green-400 font-bold">{progress}%</span>
-          </div>
-          <div className="h-2.5 bg-slate-700 rounded-full overflow-hidden">
-            <div className="h-full bg-gradient-to-r from-dairy-green-600 to-dairy-green-400 rounded-full transition-all duration-700" style={{ width: `${progress}%` }} />
-          </div>
-          <p className="text-xs text-slate-500 mt-2">{formatMl(stats.totalMlDelivered)} / {formatMl(stats.totalMlScheduled)} delivered</p>
-        </div>
+        <DeliveryProgressBar total={stats.total} done={stats.completed + stats.skipped}>
+          <span>{formatMl(stats.totalMlDelivered)} / {formatMl(stats.totalMlScheduled)} delivered</span>
+        </DeliveryProgressBar>
       )}
 
       {/* Generate button */}
@@ -137,6 +129,7 @@ const DailyDeliveries = () => {
                   <th className="text-left px-4 py-3">Customer</th>
                   <th className="text-left px-4 py-3">Milk (ml)</th>
                   <th className="text-left px-4 py-3">Assign Agent</th>
+                  <th className="text-left px-4 py-3">Photo</th>
                   <th className="text-left px-4 py-3">Status</th>
                 </tr>
               </thead>
@@ -157,6 +150,15 @@ const DailyDeliveries = () => {
                         <option value="">Unassigned</option>
                         {agents.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
                       </select>
+                    </td>
+                    <td className="px-4 py-3">
+                      {d.photoUrl ? (
+                        <a href={d.photoUrl} target="_blank" rel="noreferrer" className="block w-12 h-12 rounded overflow-hidden border border-slate-600 hover:border-dairy-green-400 transition-colors">
+                          <img src={d.photoUrl} alt="Delivery verification" className="w-full h-full object-cover" />
+                        </a>
+                      ) : (
+                        <span className="text-xs text-slate-500">-</span>
+                      )}
                     </td>
                     <td className="px-4 py-3">{statusBadge[d.status] || d.status}</td>
                   </tr>

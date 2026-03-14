@@ -15,13 +15,19 @@ export const calculateMonthlyBilling = async (customerId, month, year) => {
 
   const q = query(
     collection(db, 'deliveries'),
-    where('customerId', '==', customerId),
-    where('date', '>=', startDate),
-    where('date', '<=', endDate),
-    where('status', '==', 'delivered')
+    where('customerId', '==', customerId)
   )
   const snap = await getDocs(q)
-  const deliveries = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+  
+  // Filter in JS to avoid requiring a composite index in Firestore
+  const deliveries = snap.docs
+    .map(d => ({ id: d.id, ...d.data() }))
+    .filter(d => 
+      d.date >= startDate && 
+      d.date <= endDate && 
+      d.status === 'delivered'
+    )
+    .sort((a, b) => a.date.localeCompare(b.date))
 
   // Get customer's price per liter
   const custSnap = await getDocs(query(collection(db, 'customers'), where('__name__', '==', customerId)))

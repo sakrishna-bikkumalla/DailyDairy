@@ -30,31 +30,29 @@ export const submitRequest = async (customerId, customerName, type, data) => {
 export const getRequests = async (status = null) => {
   let q
   if (status) {
-    q = query(
-      collection(db, COLLECTION),
-      where('status', '==', status),
-      orderBy('createdAt', 'desc')
-    )
+    q = query(collection(db, COLLECTION), where('status', '==', status))
   } else {
-    q = query(collection(db, COLLECTION), orderBy('createdAt', 'desc'))
+    q = query(collection(db, COLLECTION))
   }
   const snap = await getDocs(q)
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }))
+  let results = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+  results.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0))
+  return results
 }
 
 export const getCustomerRequests = async (customerId) => {
-  const q = query(
-    collection(db, COLLECTION),
-    where('customerId', '==', customerId),
-    orderBy('createdAt', 'desc')
-  )
+  const q = query(collection(db, COLLECTION), where('customerId', '==', customerId))
   const snap = await getDocs(q)
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }))
+  let results = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+  results.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0))
+  return results
 }
 
-export const updateRequestStatus = async (requestId, status) => {
-  return await updateDoc(doc(db, COLLECTION, requestId), {
+export const updateRequestStatus = async (requestId, status, rejectionReason = null) => {
+  const data = {
     status,
     reviewedAt: serverTimestamp()
-  })
+  }
+  if (rejectionReason) data.rejectionReason = rejectionReason
+  return await updateDoc(doc(db, COLLECTION, requestId), data)
 }
