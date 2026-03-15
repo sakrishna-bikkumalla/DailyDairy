@@ -1,49 +1,134 @@
 import {
   collection,
+  doc,
   getDocs,
+  getDoc,
+  addDoc,
+  updateDoc,
+  deleteDoc,
   query,
   where,
+  orderBy,
+  serverTimestamp
 } from 'firebase/firestore'
 import { db } from '../firebase/config'
 
+const COLLECTION = 'subscriptions'
+
+// --- CRUD Operations ---
+
+export const getSubscriptionsByCustomer = async (customerId) => {
+  const q = query(collection(db, COLLECTION), where('customerId', '==', customerId))
+  const snap = await getDocs(q)
+  const subs = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+  // Sort by start date, newest first
+  return subs.sort((a, b) => new Date(b.startDate) - new Date(a.startDate))
+}
+
+export const addSubscription = async (data) => {
+  return await addDoc(collection(db, COLLECTION), {
+    ...data,
+    status: data.status || 'active',
+    createdAt: serverTimestamp()
+  })
+}
+
+export const updateSubscription = async (id, data) => {
+  return await updateDoc(doc(db, COLLECTION, id), {
+    ...data,
+    updatedAt: serverTimestamp()
+  })
+}
+
+export const deleteSubscription = async (id) => {
+  return await deleteDoc(doc(db, COLLECTION, id))
+}
+
+// --- Analytics & Details ---
+
 /**
- * Calculates a comprehensive summary of a single customer's subscription history.
- * Aggregates lifetime milk delivered, delivery occurrences, and costs.
+ * Gets a customer and their subscriptions, attaching delivery history
+ * and calculated metrics (days left, estimated vs actual cost) to each subscription.
  */
 export const getCustomerSubscriptionDetails = async (customerId) => {
-  // 1. Fetch the customer document
-  const custSnap = await getDocs(query(collection(db, 'customers'), where('__name__', '==', customerId)))
-  if (custSnap.empty) throw new Error("Customer not found")
+  // 1. Fetch Customer
+  const custDoc = await getDoc(doc(db, 'customers', customerId))
+  if (!custDoc.exists()) throw new Error("Customer not found")
+  const customer = { id: custDoc.id, ...custDoc.data() }
+
+  // 2. Fetch Subscriptions
+  const subscriptions = await getSubscriptionsByCustomer(customerId)
+
+  // 3. Fetch all deliveries for this customer
+  const delSnap = await getDocs(query(collection(db, 'deliveries'), where('customerId', '==', customerId)))
+  const allDeliveries = delSnap.docs.map(d => ({ id: d.id, ...d.data() }))
+
+  // 4. Map metrics per subscription
+  const today = new Date().toISOString().split('T')[0] // YYYY-MM-DD
   
-  const customer = { id: custSnap.docs[0].id, ...custSnap.docs[0].data() }
-  const pricePerLiter = customer.pricePerLiter || 60 // fallback if undefined
-  
-  // 2. Fetch all historical deliveries for this customer
-  const q = query(collection(db, 'deliveries'), where('customerId', '==', customerId))
-  const snap = await getDocs(q)
-  
-  const allDeliveries = snap.docs.map(d => ({ id: d.id, ...d.data() }))
-  
-  // 3. Aggregate totals
-  const completedDeliveries = allDeliveries.filter(d => d.status === 'delivered')
-  
-  const lifetimeMl = completedDeliveries.reduce((sum, d) => sum + (d.milkDeliveredMl || 0), 0)
+  const enrichedSubscriptions = subscriptions.map(sub => {
+    const start = new Date(sub.startDate)
+    const end = new Date(sub.endDate)
+    const now = new Date(today)
+    
+    // Calculates total days inclusive
+    const totalDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1
+    
+    // Days completed up to today (maxed at totalDays)
+    let daysCompleted = Math.ceil((now - start) / (1000 * 60 * 60 * 24)) + 1
+    if (now < start) daysCompleted = 0
+    if (now > end) daysCompleted = totalDays
+    
+    const daysLeft = totalDays - daysCompleted
+
+    // Filter deliveries strictly within this subscription's date bounds
+    const subDeliveries = allDeliveries.filter(d => d.date >= sub.startDate && d.date <= sub.endDate)
+    const completedDeliveries = subDeliveries.filter(d => d.status === 'delivered')
+    
+    // ml / liters
+    const totalMlDelivered = completedDeliveries.reduce((sum, d) => sum + (d.milkDeliveredMl || 0), 0)
+    const totalLitersDelivered = totalMlDelivered / 1000
+    
+    // Costs
+    const price = sub.pricePerLiter || customer.pricePerLiter || 60
+    const scheduledLitersDay = (sub.dailyQuantityMl || 0) / 1000
+    const estimatedCost = totalDays * scheduledLitersDay * price
+    const actualCost = totalLitersDelivered * price
+
+    return {
+      ...sub,
+      metrics: {
+        totalDays,
+        daysCompleted,
+        daysLeft: Math.max(0, daysLeft),
+        deliveriesScheduled: subDeliveries.length,
+        deliveriesCompleted: completedDeliveries.length,
+        totalLitersDelivered,
+        estimatedCost,
+        actualCost
+      },
+      // Sort newest delivery first
+      history: subDeliveries.sort((a, b) => b.date.localeCompare(a.date))
+    }
+  })
+
+  // Lifetime metrics summarizing everything
+  const lifetimeCompleted = allDeliveries.filter(d => d.status === 'delivered')
+  const lifetimeMl = lifetimeCompleted.reduce((sum, d) => sum + (d.milkDeliveredMl || 0), 0)
   const lifetimeLiters = lifetimeMl / 1000
-  const lifetimeBilled = lifetimeLiters * pricePerLiter
-  
-  // 4. Sort for timeline display (newest first)
-  const sortedHistory = allDeliveries.sort((a, b) => b.date.localeCompare(a.date))
+  const lifetimeBilled = lifetimeLiters * (customer.pricePerLiter || 60)
 
   return {
     customer,
-    stats: {
-      totalDeliveriesScheduled: allDeliveries.length,
-      totalDeliveriesCompleted: completedDeliveries.length,
-      lifetimeMl,
+    lifetimeStats: {
+      totalDeliveries: allDeliveries.length,
+      completedDeliveries: lifetimeCompleted.length,
       lifetimeLiters,
-      lifetimeBilled,
-      pricePerLiter
+      lifetimeBilled
     },
-    history: sortedHistory
+    subscriptions: enrichedSubscriptions,
+    // Provide full history in case you want to see deliveries outside any active subscription bounds bounds
+    fullHistory: allDeliveries.sort((a, b) => b.date.localeCompare(a.date))
   }
 }
+

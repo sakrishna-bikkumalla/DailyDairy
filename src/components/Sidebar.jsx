@@ -15,7 +15,6 @@ const adminLinks = [
   { to: '/admin/deliveries', icon: MdLocalShipping, label: 'Daily Deliveries' },
   { to: '/admin/requests', icon: MdInbox, label: 'Requests' },
   { to: '/admin/subscriptions', icon: MdAssignment, label: 'Subscriptions' },
-  { to: '/admin/billing', icon: MdReceipt, label: 'Billing' },
 ]
 
 const customerLinks = [

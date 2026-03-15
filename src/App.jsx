@@ -10,7 +10,6 @@ import Customers from './pages/admin/Customers'
 import Agents from './pages/admin/Agents'
 import DailyDeliveries from './pages/admin/DailyDeliveries'
 import Requests from './pages/admin/Requests'
-import Billing from './pages/admin/Billing'
 import Subscriptions from './pages/admin/Subscriptions'
 import CustomerDashboard from './pages/customer/CustomerDashboard'
 import SubmitRequest from './pages/customer/SubmitRequest'
@@ -64,7 +63,6 @@ function App() {
             <Route path="agents" element={<Agents />} />
             <Route path="deliveries" element={<DailyDeliveries />} />
             <Route path="requests" element={<Requests />} />
-            <Route path="billing" element={<Billing />} />
             <Route path="subscriptions" element={<Subscriptions />} />
           </Route>
 
