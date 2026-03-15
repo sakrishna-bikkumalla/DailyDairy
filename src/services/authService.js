@@ -3,12 +3,22 @@ import {
   doc,
   getDoc,
   getDocs,
+  updateDoc,
   query,
   where,
   addDoc,
   serverTimestamp
 } from 'firebase/firestore'
 import { db } from '../firebase/config'
+
+export const updateUserProfile = async (userId, { name, phone, password }) => {
+  const updates = {}
+  if (name !== undefined) updates.name = name.trim()
+  if (phone !== undefined) updates.phone = phone.trim()
+  if (password) updates.password = password  // only update if provided (non-empty)
+  updates.updatedAt = serverTimestamp()
+  await updateDoc(doc(db, 'users', userId), updates)
+}
 
 // Auth is handled via Firestore users collection (phone number + hashed password)
 // For simplicity in production this should use Firebase Auth with custom auth flow
