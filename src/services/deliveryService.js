@@ -13,8 +13,6 @@ import {
 import { db } from '../firebase/config'
 
 const COLLECTION = 'deliveries'
-const CLOUDINARY_URL = 'https://api.cloudinary.com/v1_1/demo/image/upload'
-const CLOUDINARY_PRESET = 'docs_upload_example_us'
 
 export const createDailyDeliveries = async (date, customers, agentId = null) => {
   // Check if deliveries for this date already exist
@@ -77,18 +75,21 @@ export const getDeliveriesByCustomer = async (customerId) => {
 
 export const uploadDeliveryPhoto = async (file) => {
   if (!file) return null;
-  const formData = new FormData();
-  formData.append('file', file);
-  formData.append('upload_preset', CLOUDINARY_PRESET);
   
   try {
-    const res = await fetch(CLOUDINARY_URL, {
-      method: 'POST',
-      body: formData
-    });
-    const data = await res.json();
-    if (data.error) throw new Error(data.error.message);
-    return data.secure_url;
+    const { ref, uploadBytes, getDownloadURL } = await import('firebase/storage')
+    const { storage } = await import('../firebase/config')
+    
+    // Create a unique filename
+    const filename = `deliveries/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`
+    const storageRef = ref(storage, filename)
+    
+    // Upload file
+    const snapshot = await uploadBytes(storageRef, file)
+    
+    // Get the public URL
+    const downloadURL = await getDownloadURL(snapshot.ref)
+    return downloadURL
   } catch (e) {
     console.error("Image upload failed:", e);
     throw new Error(e.message || "Failed to upload image. Please try again.");

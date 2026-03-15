@@ -26,6 +26,33 @@ export const addAgent = async (data) => {
   })
 }
 
+// Creates an agent record AND a login account in the users collection.
+// Password = admin-provided (data.password) or defaults to agent's phone number.
+export const createAgentWithAccount = async (data) => {
+  // Strip password from agent profile data — it belongs in users doc only
+  const { password: providedPassword, ...agentData } = data
+  const loginPassword = (providedPassword && providedPassword.trim()) ? providedPassword.trim() : data.phone
+
+  // 1. Create the agent profile doc (no password stored here)
+  const agentRef = await addDoc(collection(db, COLLECTION), {
+    ...agentData,
+    createdAt: serverTimestamp()
+  })
+
+  // 2. Create the users login doc linked to this agent
+  await addDoc(collection(db, 'users'), {
+    name: data.name,
+    phone: data.phone,
+    password: loginPassword,
+    role: 'agent',
+    linkedId: agentRef.id,
+    createdAt: serverTimestamp()
+  })
+
+  return { agentId: agentRef.id, defaultPassword: loginPassword }
+}
+
+
 export const updateAgent = async (id, data) => {
   return await updateDoc(doc(db, COLLECTION, id), {
     ...data,

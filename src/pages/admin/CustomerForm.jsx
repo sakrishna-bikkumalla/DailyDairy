@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react'
-import { MdClose, MdLocationOn, MdMyLocation } from 'react-icons/md'
+import { MdClose, MdLocationOn, MdMyLocation, MdLock } from 'react-icons/md'
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
@@ -54,6 +54,7 @@ const CustomerForm = ({ initial, onSave, onClose }) => {
     latitude: initial?.latitude || null,
     longitude: initial?.longitude || null,
   })
+  const [password, setPassword] = useState('')
   const [showMap, setShowMap] = useState(false)
   const [saving, setSaving] = useState(false)
 
@@ -92,7 +93,9 @@ const CustomerForm = ({ initial, onSave, onClose }) => {
       dailyMilkMl: Number(form.dailyMilkMl),
       pricePerLiter: Number(form.pricePerLiter),
       latitude: form.latitude,
-      longitude: form.longitude
+      longitude: form.longitude,
+      // Only pass password for new customers; leave undefined on edit
+      ...(!initial && { password: password.trim() || form.phone })
     }
 
     await onSave(dataToSave)
@@ -120,6 +123,26 @@ const CustomerForm = ({ initial, onSave, onClose }) => {
             <label className="form-label">Phone Number *</label>
             <input className="form-input" type="tel" value={form.phone} onChange={e => set('phone', e.target.value)} placeholder="10-digit mobile number" maxLength={10} required />
           </div>
+          {/* Password — only for new customers */}
+          {!initial && (
+            <div>
+              <label className="form-label">
+                Login Password
+                <span className="ml-1 text-slate-500 font-normal">(default: phone number if left blank)</span>
+              </label>
+              <div className="relative">
+                <MdLock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  className="form-input pl-10"
+                  type="text"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  placeholder={`Default: ${form.phone || 'phone number'}`}
+                />
+              </div>
+              <p className="text-xs text-slate-500 mt-1">Share this with the customer so they can log in.</p>
+            </div>
+          )}
           {/* Address Fields */}
           <div className="space-y-3 p-3 bg-slate-800/50 rounded-xl border border-slate-700/50">
             <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Delivery Address</h3>

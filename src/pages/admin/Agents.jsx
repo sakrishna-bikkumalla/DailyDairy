@@ -1,16 +1,21 @@
 import React, { useEffect, useState } from 'react'
-import { MdAdd, MdEdit, MdDelete, MdDeliveryDining } from 'react-icons/md'
-import { getAgents, addAgent, updateAgent, deleteAgent } from '../../services/agentService'
+import { MdAdd, MdEdit, MdDelete, MdDeliveryDining, MdLock } from 'react-icons/md'
+import { getAgents, createAgentWithAccount, updateAgent, deleteAgent } from '../../services/agentService'
 import toast from 'react-hot-toast'
 
 const AgentForm = ({ initial, onSave, onClose }) => {
   const [form, setForm] = useState({ name: initial?.name || '', phone: initial?.phone || '', assignedArea: initial?.assignedArea || '' })
+  const [password, setPassword] = useState('')
   const [saving, setSaving] = useState(false)
   const set = (k, v) => setForm(p => ({ ...p, [k]: v }))
   const save = async (e) => {
     e.preventDefault()
     setSaving(true)
-    await onSave(form)
+    const dataToSave = {
+      ...form,
+      ...(!initial && { password: password.trim() || form.phone })
+    }
+    await onSave(dataToSave)
     setSaving(false)
   }
   return (
@@ -23,6 +28,26 @@ const AgentForm = ({ initial, onSave, onClose }) => {
         <form onSubmit={save} className="px-6 py-5 space-y-4">
           <div><label className="form-label">Full Name *</label><input className="form-input" value={form.name} onChange={e => set('name', e.target.value)} required /></div>
           <div><label className="form-label">Phone *</label><input className="form-input" type="tel" value={form.phone} onChange={e => set('phone', e.target.value)} maxLength={10} required /></div>
+          
+          {!initial && (
+            <div>
+              <label className="form-label">
+                Login Password
+                <span className="ml-1 text-slate-500 font-normal">(default: phone number if left blank)</span>
+              </label>
+              <div className="relative">
+                <MdLock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  className="form-input pl-10"
+                  type="text"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  placeholder={`Default: ${form.phone || 'phone number'}`}
+                />
+              </div>
+            </div>
+          )}
+
           <div><label className="form-label">Assigned Area</label><input className="form-input" value={form.assignedArea} onChange={e => set('assignedArea', e.target.value)} placeholder="e.g. North Zone" /></div>
           <div className="flex gap-3 pt-2">
             <button type="button" onClick={onClose} className="btn-secondary flex-1 justify-center">Cancel</button>
@@ -53,8 +78,16 @@ const Agents = () => {
 
   const handleSave = async (data) => {
     try {
-      if (editTarget) { await updateAgent(editTarget.id, data); toast.success('Agent updated') }
-      else { await addAgent(data); toast.success('Agent added') }
+      if (editTarget) {
+        await updateAgent(editTarget.id, data)
+        toast.success('Agent updated')
+      } else {
+        const { defaultPassword } = await createAgentWithAccount(data)
+        toast.success(
+          `✅ Agent added!\nLogin: ${data.phone} / ${defaultPassword}`,
+          { duration: 8000 }
+        )
+      }
       setShowForm(false)
       load()
     } catch { toast.error('Failed to save') }

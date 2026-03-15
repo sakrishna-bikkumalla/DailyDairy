@@ -54,12 +54,12 @@ const DeliveryList = () => {
     // If partial amount is selected, use input. Otherwise, use scheduled amount.
     const isPartial = issueState[d.id] === 'partial'
     const ml = isPartial ? Number(mlInputs[d.id] ?? d.milkScheduledMl) : d.milkScheduledMl
-    const photoFile = photoInputs[d.id]
+    // const photoFile = photoInputs[d.id]
     
-    if (!photoFile) {
-      toast.error('Please upload a photo of the delivery to proceed')
-      return
-    }
+    // if (!photoFile) {
+    //   toast.error('Please upload a photo of the delivery to proceed')
+    //   return
+    // }
 
     if (isPartial && (ml <= 0 || ml >= d.milkScheduledMl)) {
       toast.error('Partial amount must be greater than 0 and less than scheduled amount')
@@ -69,10 +69,10 @@ const DeliveryList = () => {
     setMarkingId(d.id)
     try {
       // 1. Upload photo to Cloudinary
-      const photoUrl = await uploadDeliveryPhoto(photoFile)
+      // const photoUrl = await uploadDeliveryPhoto(photoFile)
       
-      // 2. Mark as delivered with the new photo URL
-      await markDelivered(d.id, ml, photoUrl)
+      // 2. Mark as delivered with the new photo URL (or null if disabled)
+      await markDelivered(d.id, ml, null)
       
       toast.success(`Delivered ${formatMl(ml)} to ${d.customerName}`)
       load()
@@ -198,9 +198,9 @@ const DeliveryList = () => {
                   <div className="flex items-center gap-3 mt-2">
                     <span className="badge-blue">{formatMl(d.milkScheduledMl)}</span>
                     {d.status === 'delivered' && <span className="badge-green">Delivered {formatMl(d.milkDeliveredMl)}</span>}
-                    {d.status === 'delivered' && d.photoUrl && (
+                    {/* {d.status === 'delivered' && d.photoUrl && (
                       <a href={d.photoUrl} target="_blank" rel="noreferrer" className="text-xs text-blue-400 hover:text-blue-300 underline">View Photo</a>
-                    )}
+                    )} */}
                     {d.status === 'pending' && <span className="badge-amber">Pending</span>}
                     {d.status === 'skipped' && <span className="badge-red">Skipped</span>}
                   </div>
@@ -222,7 +222,7 @@ const DeliveryList = () => {
                       </div>
                     )}
                     
-                    <div className="flex items-center gap-2">
+                    {/* <div className="flex items-center gap-2">
                       <input 
                         type="file"
                         accept="image/*"
@@ -230,7 +230,7 @@ const DeliveryList = () => {
                         onChange={e => setPhotoInputs(p => ({ ...p, [d.id]: e.target.files[0] }))}
                         className="text-xs text-slate-400 file:mr-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-xs file:bg-slate-700 file:text-slate-300 hover:file:bg-slate-600 cursor-pointer w-36"
                       />
-                    </div>
+                    </div> */}
                     
                     {/* Navigation Button */}
                     <a

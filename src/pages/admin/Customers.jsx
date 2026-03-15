@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { MdAdd, MdEdit, MdDelete, MdSearch, MdLocationOn, MdPhone } from 'react-icons/md'
 import { GiMilkCarton } from 'react-icons/gi'
-import { getCustomers, addCustomer, updateCustomer, deleteCustomer } from '../../services/customerService'
+import { getCustomers, createCustomerWithAccount, updateCustomer, deleteCustomer } from '../../services/customerService'
 import { formatMl } from '../../utils/mlUtils'
 import toast from 'react-hot-toast'
 import CustomerForm from './CustomerForm'
@@ -52,10 +52,13 @@ const Customers = () => {
     try {
       if (editTarget) {
         await updateCustomer(editTarget.id, data)
-        toast.success('Customer updated')
+        toast.success('Customer updated successfully')
       } else {
-        await addCustomer(data)
-        toast.success('Customer added')
+        const { defaultPassword } = await createCustomerWithAccount(data)
+        toast.success(
+          `✅ Customer added!\nLogin: ${data.phone} / ${defaultPassword}`,
+          { duration: 8000 }
+        )
       }
       setShowForm(false)
       load()
