@@ -29,23 +29,19 @@ export const calculateMonthlyBilling = async (customerId, month, year) => {
     )
     .sort((a, b) => a.date.localeCompare(b.date))
 
-  // Get customer's price per liter
-  const custSnap = await getDocs(query(collection(db, 'customers'), where('__name__', '==', customerId)))
-
-  let pricePerLiter = 60 // default
-  if (!custSnap.empty) {
-    pricePerLiter = custSnap.docs[0].data().pricePerLiter || 60
-  }
-
   const totalMl = deliveries.reduce((sum, d) => sum + (d.milkDeliveredMl || 0), 0)
   const totalLiters = mlToLiters(totalMl)
-  const totalAmount = totalLiters * pricePerLiter
+  
+  // Calculate total amount using per-delivery pricing
+  const totalAmount = deliveries.reduce((sum, d) => {
+    const price = d.pricePerLiter || 60
+    return sum + (mlToLiters(d.milkDeliveredMl || 0) * price)
+  }, 0)
 
   return {
     deliveries,
     totalMl,
     totalLiters,
-    pricePerLiter,
     totalAmount,
     month,
     year

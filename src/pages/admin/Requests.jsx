@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { MdCheckCircle, MdCancel, MdInbox, MdRefresh } from 'react-icons/md'
 import { getRequests, updateRequestStatus } from '../../services/requestService'
+import { createDeliveryForRequest } from '../../services/deliveryService'
 import { formatDate, formatDateTime } from '../../utils/dateUtils'
 import { formatMl } from '../../utils/mlUtils'
 import toast from 'react-hot-toast'
@@ -34,6 +35,16 @@ const Requests = () => {
   const handle = async (id, status, reason = null) => {
     try {
       await updateRequestStatus(id, status, reason)
+      
+      // If approving a delivery request, potentially create an immediate delivery
+      if (status === 'approved') {
+        const req = requests.find(r => r.id === id)
+        const activeTypes = ['extra_milk', 'morning_milk', 'evening_milk', 'custom']
+        if (req && activeTypes.includes(req.requestType)) {
+          await createDeliveryForRequest(req)
+        }
+      }
+
       toast.success(`Request ${status}`)
       if (status === 'rejected') setRejectingId(null)
       load()

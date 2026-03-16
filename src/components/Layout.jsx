@@ -7,7 +7,7 @@ const Layout = ({ role }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   return (
-    <div className="flex min-h-screen bg-slate-950">
+    <div className="flex min-h-screen bg-transparent">
       {/* Sidebar */}
       <Sidebar role={role} open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 

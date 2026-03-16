@@ -12,6 +12,7 @@ import {
   serverTimestamp
 } from 'firebase/firestore'
 import { db } from '../firebase/config'
+import { mlToLiters } from '../utils/mlUtils'
 
 const COLLECTION = 'subscriptions'
 
@@ -90,10 +91,15 @@ export const getCustomerSubscriptionDetails = async (customerId) => {
     const totalLitersDelivered = totalMlDelivered / 1000
     
     // Costs
-    const price = sub.pricePerLiter || customer.pricePerLiter || 60
+    const price = sub.pricePerLiter || 60
     const scheduledLitersDay = (sub.dailyQuantityMl || 0) / 1000
     const estimatedCost = totalDays * scheduledLitersDay * price
-    const actualCost = totalLitersDelivered * price
+    
+    // Calculate actual cost based on individual delivery pricing
+    const actualCost = completedDeliveries.reduce((sum, d) => {
+      const deliveryPrice = d.pricePerLiter || price
+      return sum + (mlToLiters(d.milkDeliveredMl || 0) * deliveryPrice)
+    }, 0)
 
     return {
       ...sub,
@@ -116,7 +122,10 @@ export const getCustomerSubscriptionDetails = async (customerId) => {
   const lifetimeCompleted = allDeliveries.filter(d => d.status === 'delivered')
   const lifetimeMl = lifetimeCompleted.reduce((sum, d) => sum + (d.milkDeliveredMl || 0), 0)
   const lifetimeLiters = lifetimeMl / 1000
-  const lifetimeBilled = lifetimeLiters * (customer.pricePerLiter || 60)
+  const lifetimeBilled = lifetimeCompleted.reduce((sum, d) => {
+    const deliveryPrice = d.pricePerLiter || 60
+    return sum + (mlToLiters(d.milkDeliveredMl || 0) * deliveryPrice)
+  }, 0)
 
   return {
     customer,
@@ -130,5 +139,38 @@ export const getCustomerSubscriptionDetails = async (customerId) => {
     // Provide full history in case you want to see deliveries outside any active subscription bounds bounds
     fullHistory: allDeliveries.sort((a, b) => b.date.localeCompare(a.date))
   }
+}
+
+/**
+ * Synchronizes pending deliveries for a specific subscription.
+ * Call this after adding or updating a subscription to ensure future
+ * deliveries match the new subscription parameters.
+ */
+export const syncPendingDeliveries = async (subscriptionId) => {
+  const subSnap = await getDoc(doc(db, COLLECTION, subscriptionId))
+  if (!subSnap.exists()) return
+  const sub = { id: subSnap.id, ...subSnap.data() }
+
+  // Get all pending deliveries for this customer within plan dates
+  const q = query(
+    collection(db, 'deliveries'),
+    where('customerId', '==', sub.customerId),
+    where('status', '==', 'pending')
+  )
+  
+  const snap = await getDocs(q)
+  const pendingInRange = snap.docs
+    .map(d => ({ id: d.id, ...d.data() }))
+    .filter(d => d.date >= sub.startDate && d.date <= sub.endDate)
+
+  // Update them to match new quantity
+  const promises = pendingInRange.map(d => 
+    updateDoc(doc(db, 'deliveries', d.id), {
+      milkScheduledMl: sub.dailyQuantityMl,
+      subscriptionId: sub.id // Link it if not already linked
+    })
+  )
+  
+  await Promise.all(promises)
 }
 

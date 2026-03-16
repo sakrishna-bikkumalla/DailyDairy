@@ -108,8 +108,6 @@ const Customers = () => {
                   <tr className="border-b border-slate-700 bg-slate-700/30 text-xs text-slate-400 uppercase tracking-wide">
                     <th className="text-left px-4 py-3">Name</th>
                     <th className="text-left px-4 py-3">Phone</th>
-                    <th className="text-left px-4 py-3">Daily Milk</th>
-                    <th className="text-left px-4 py-3">Price/L</th>
                     <th className="text-left px-4 py-3">Location</th>
                     <th className="text-right px-4 py-3">Actions</th>
                   </tr>
@@ -122,10 +120,6 @@ const Customers = () => {
                         <p className="text-xs text-slate-500 truncate max-w-[180px]">{c.address}</p>
                       </td>
                       <td className="px-4 py-3 text-slate-300 text-sm">{c.phone}</td>
-                      <td className="px-4 py-3">
-                        <span className="badge-green">{formatMl(c.dailyMilkMl || 0)}</span>
-                      </td>
-                      <td className="px-4 py-3 text-slate-300 text-sm">₹{c.pricePerLiter}/L</td>
                       <td className="px-4 py-3">
                         {c.locationUrl ? (
                           <a href={c.locationUrl} target="_blank" rel="noreferrer"

@@ -164,10 +164,7 @@ const ViewProfile = ({ user, customerData, meta, loading, onEdit, onLogout }) =>
             <>
               <SectionHeader>Delivery Details</SectionHeader>
               <InfoRow icon={<MdHome />} label="Delivery Address" value={customerData.address} meta={meta} />
-              <div className="grid grid-cols-2 gap-2.5">
-                <InfoRow icon={<MdLocalDrink />} label="Daily Milk" value={formatMl(customerData.dailyMilkMl)} meta={meta} />
-                <InfoRow icon={<MdAttachMoney />} label="Price / Liter" value={customerData.pricePerLiter ? `₹${customerData.pricePerLiter}` : null} meta={meta} />
-              </div>
+
 
               <SectionHeader>Location</SectionHeader>
               {customerData.latitude && customerData.longitude ? (
@@ -253,8 +250,7 @@ const EditProfile = ({ user, customerData, meta, onBack, onSaved }) => {
   const [state, setState] = useState(parsed.state || '')
   const [pincode, setPincode] = useState(parsed.pincode || '')
   const [country, setCountry] = useState(parsed.country || 'India')
-  const [dailyMilkMl, setDailyMilkMl] = useState(customerData?.dailyMilkMl || 500)
-  const [pricePerLiter, setPricePerLiter] = useState(customerData?.pricePerLiter || 60)
+
   const [locationUrl, setLocationUrl] = useState(customerData?.locationUrl || '')
   const [latitude, setLatitude] = useState(customerData?.latitude || null)
   const [longitude, setLongitude] = useState(customerData?.longitude || null)
@@ -306,8 +302,7 @@ const EditProfile = ({ user, customerData, meta, onBack, onSaved }) => {
           phone: phone.trim(),
           address,
           locationUrl: locationUrl.trim(),
-          dailyMilkMl: Number(dailyMilkMl),
-          pricePerLiter: Number(pricePerLiter),
+
           latitude,
           longitude,
         })
@@ -411,21 +406,7 @@ const EditProfile = ({ user, customerData, meta, onBack, onSaved }) => {
               </Field>
             </div>
 
-            <SectionHeader>Delivery Preferences</SectionHeader>
-            <div className="grid grid-cols-2 gap-2.5">
-              <Field label="Daily Milk (ml)" icon={<MdLocalDrink className="text-sm" />} error={null}>
-                <input type="number" value={dailyMilkMl} onChange={e => setDailyMilkMl(e.target.value)} min={100} step={100} className={inputClass(null)} />
-              </Field>
-              <div>
-                <label className="block text-xs text-slate-400 font-medium mb-1.5">
-                  <MdAttachMoney className="inline mr-1.5 text-sm" />Price / Liter (₹)
-                </label>
-                <div className={`w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-400 cursor-not-allowed flex items-center justify-between`}>
-                  <span>₹{pricePerLiter}</span>
-                  <span className="text-xs text-slate-600">Admin-set</span>
-                </div>
-              </div>
-            </div>
+
 
             <SectionHeader>Location (Optional)</SectionHeader>
 

@@ -131,19 +131,20 @@ const AdminDashboard = () => {
             </div>
           </div>
 
-          {/* Quick links */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-6">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-8">
             {[
-              { to: '/admin/customers', label: 'Manage Customers', icon: MdPeople, color: 'border-dairy-green-700 hover:bg-dairy-green-900/30' },
-              { to: '/admin/agents', label: 'Manage Agents', icon: MdDeliveryDining, color: 'border-blue-700 hover:bg-blue-900/30' },
-              { to: '/admin/deliveries', label: 'Daily Deliveries', icon: MdLocalShipping, color: 'border-amber-700 hover:bg-amber-900/30' },
-              { to: '/admin/billing', label: 'View Billing', icon: MdTrendingUp, color: 'border-purple-700 hover:bg-purple-900/30' },
+              { to: '/admin/customers', label: 'Manage Customers', icon: MdPeople, color: 'border-dairy-green-500/20 hover:bg-dairy-green-500/10' },
+              { to: '/admin/agents', label: 'Manage Agents', icon: MdDeliveryDining, color: 'border-blue-500/20 hover:bg-blue-500/10' },
+              { to: '/admin/deliveries', label: 'Daily Deliveries', icon: MdLocalShipping, color: 'border-amber-500/20 hover:bg-amber-500/10' },
+              { to: '/admin/billing', label: 'View Billing', icon: MdTrendingUp, color: 'border-purple-500/20 hover:bg-purple-500/10' },
             ].map(({ to, label, icon: Icon, color }) => (
               <Link key={to} to={to}
-                className={`flex flex-col items-center gap-2 p-4 rounded-xl border ${color} text-slate-300 hover:text-white transition-all duration-200 text-center text-sm font-medium`}
+                className={`flex flex-col items-center gap-3 p-5 rounded-2xl border backdrop-blur-md ${color} text-slate-400 hover:text-white transition-all duration-300 text-center text-sm font-semibold shadow-lg group`}
               >
-                <Icon className="text-2xl" />
-                {label}
+                <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center mb-1 group-hover:scale-110 transition-transform">
+                  <Icon className="text-3xl" />
+                </div>
+                <span className="tracking-tight">{label}</span>
               </Link>
             ))}
           </div>

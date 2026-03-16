@@ -1,4 +1,4 @@
-# FarmToHome: Smart Dairy Delivery Management System
+# Daily Dairy: Smart Dairy Delivery Management System
 
 A full-stack, comprehensive web application built to digitize and streamline milk delivery operations for dairy vendors. The system supports three distinct roles—**Admin (Vendor)**, **Customer**, and **Delivery Agent**—each with their own tailored dashboards, features, and workflows.
 
@@ -56,8 +56,8 @@ Ensure you have the following installed on your machine:
 ### 2. Clone the Repository
 If you haven't already, clone the project and navigate to the root directory:
 ```bash
-git clone https://gitlab.com/dairyfoam-project/farmtohome.git
-cd farmtohome
+git clone https://gitlab.com/dairyfoam-project/daily-dairy.git
+cd daily-dairy
 ```
 
 ### 3. Install Dependencies
@@ -67,7 +67,7 @@ npm install
 ```
 
 ### 4. Environment Setup
-The project relies on Firebase and Cloudinary. You must create a `.env` file in the root of the `farmtohome` directory with your specific API keys:
+The project relies on Firebase and Cloudinary. You must create a `.env` file in the root of the `daily-dairy` directory with your specific API keys:
 
 ```env
 VITE_FIREBASE_API_KEY=your_api_key

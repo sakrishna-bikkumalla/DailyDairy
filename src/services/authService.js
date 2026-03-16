@@ -4,6 +4,7 @@ import {
   getDoc,
   getDocs,
   updateDoc,
+  deleteDoc,
   query,
   where,
   addDoc,
@@ -60,11 +61,11 @@ export const seedDemoData = async () => {
 
   // Demo customers
   const customers = [
-    { name: 'Ramesh Sharma', phone: '9876543210', address: 'House No 12, Main Road, Nagpur', dailyMilkMl: 500, pricePerLiter: 60, latitude: 21.1458, longitude: 79.0882 },
-    { name: 'Lakshmi Devi', phone: '9876543211', address: 'Near Temple, West Street, Nagpur', dailyMilkMl: 750, pricePerLiter: 60, latitude: 21.1500, longitude: 79.0900 },
-    { name: 'Suresh Patil', phone: '9876543212', address: 'Shivaji Nagar, Plot 5, Nagpur', dailyMilkMl: 1000, pricePerLiter: 55, latitude: 21.1420, longitude: 79.0850 },
-    { name: 'Priya Nair', phone: '9876543213', address: 'Gandhi Road, Flat 3B, Nagpur', dailyMilkMl: 500, pricePerLiter: 60, latitude: 21.1480, longitude: 79.0920 },
-    { name: 'Arjun Singh', phone: '9876543214', address: 'Orange City Township, Nagpur', dailyMilkMl: 1500, pricePerLiter: 55, latitude: 21.1460, longitude: 79.0870 },
+    { name: 'Ramesh Sharma', phone: '9876543210', address: 'House No 12, Main Road, Nagpur', latitude: 21.1458, longitude: 79.0882 },
+    { name: 'Lakshmi Devi', phone: '9876543211', address: 'Near Temple, West Street, Nagpur', latitude: 21.1500, longitude: 79.0900 },
+    { name: 'Suresh Patil', phone: '9876543212', address: 'Shivaji Nagar, Plot 5, Nagpur', latitude: 21.1420, longitude: 79.0850 },
+    { name: 'Priya Nair', phone: '9876543213', address: 'Gandhi Road, Flat 3B, Nagpur', latitude: 21.1480, longitude: 79.0920 },
+    { name: 'Arjun Singh', phone: '9876543214', address: 'Orange City Township, Nagpur', latitude: 21.1460, longitude: 79.0870 },
   ]
 
   const customerRefs = []
@@ -134,3 +135,62 @@ export const seedDemoData = async () => {
 
   return { seeded: true, customers: customerRefs.length, agents: agentRefs.length }
 }
+
+export const clearDemoData = async () => {
+  const collections = ['users', 'customers', 'agents', 'requests', 'subscriptions', 'deliveries'];
+  const results = { deletedCount: 0 };
+  
+  // Define identifiable demo values
+  const demoUserPhones = ['9999900001', '9876543210', '9111100001'];
+  const demoCustomerPhones = ['9876543210', '9876543211', '9876543212', '9876543213', '9876543214'];
+  const demoAgentPhones = ['9111100001', '9111100002'];
+  const demoNames = ['Ravi Kumar (Admin)', 'Ramesh Sharma', 'Lakshmi Devi', 'Suresh Patil', 'Priya Nair', 'Arjun Singh', 'Vijay Yadav', 'Santosh Kumar'];
+
+  // 1. Delete Users
+  for (const phone of demoUserPhones) {
+    const q = query(collection(db, 'users'), where('phone', '==', phone));
+    const snap = await getDocs(q);
+    for (const d of snap.docs) {
+      await deleteDoc(doc(db, 'users', d.id));
+      results.deletedCount++;
+    }
+  }
+
+  // 2. Delete Customers
+  for (const phone of demoCustomerPhones) {
+    const q = query(collection(db, 'customers'), where('phone', '==', phone));
+    const snap = await getDocs(q);
+    for (const d of snap.docs) {
+      // Also delete related subscriptions and deliveries
+      const subSnap = await getDocs(query(collection(db, 'subscriptions'), where('customerId', '==', d.id)));
+      for (const s of subSnap.docs) await deleteDoc(doc(db, 'subscriptions', s.id));
+      
+      const delivSnap = await getDocs(query(collection(db, 'deliveries'), where('customerId', '==', d.id)));
+      for (const deliv of delivSnap.docs) await deleteDoc(doc(db, 'deliveries', deliv.id));
+
+      const reqSnap = await getDocs(query(collection(db, 'requests'), where('customerId', '==', d.id)));
+      for (const r of reqSnap.docs) await deleteDoc(doc(db, 'requests', r.id));
+
+      await deleteDoc(doc(db, 'customers', d.id));
+      results.deletedCount++;
+    }
+  }
+
+  // 3. Delete Agents
+  for (const phone of demoAgentPhones) {
+    const q = query(collection(db, 'agents'), where('phone', '==', phone));
+    const snap = await getDocs(q);
+    for (const d of snap.docs) {
+      // Also delete agent-assigned deliveries
+      const delivSnap = await getDocs(query(collection(db, 'deliveries'), where('agentId', '==', d.id)));
+      for (const deliv of delivSnap.docs) {
+        await updateDoc(doc(db, 'deliveries', deliv.id), { agentId: null });
+      }
+      await deleteDoc(doc(db, 'agents', d.id));
+      results.deletedCount++;
+    }
+  }
+
+  return results;
+}
+

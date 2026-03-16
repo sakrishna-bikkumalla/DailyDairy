@@ -11,14 +11,14 @@ const DeliveryProgressBar = ({ total, done, label = 'Delivery Progress', childre
         <span className="text-slate-300 font-medium text-sm">{label}</span>
         <span className="text-dairy-green-400 font-bold text-lg">{progress}%</span>
       </div>
-      <div className="h-3 bg-slate-700 rounded-full overflow-hidden">
+      <div className="h-4 bg-white/5 rounded-full overflow-hidden border border-white/5 p-0.5 shadow-inner">
         <div 
-          className="h-full bg-gradient-to-r from-dairy-green-600 to-dairy-green-400 rounded-full transition-all duration-700" 
+          className="h-full bg-gradient-to-r from-dairy-green-500 to-dairy-green-300 rounded-full transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(34,197,94,0.3)]" 
           style={{ width: `${progress}%` }} 
         />
       </div>
       {children && (
-        <div className="mt-2 flex items-center justify-between text-xs text-slate-500">
+        <div className="mt-3 flex items-center justify-between text-[11px] font-medium text-slate-500 uppercase tracking-wider">
           {children}
         </div>
       )}

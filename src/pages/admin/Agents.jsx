@@ -2,13 +2,16 @@ import React, { useEffect, useState } from 'react'
 import { MdAdd, MdEdit, MdDelete, MdDeliveryDining, MdLock } from 'react-icons/md'
 import { getAgents, createAgentWithAccount, updateAgent, deleteAgent } from '../../services/agentService'
 import toast from 'react-hot-toast'
+import Modal from '../../components/Modal'
 
 const AgentForm = ({ initial, onSave, onClose }) => {
   const [form, setForm] = useState({ name: initial?.name || '', phone: initial?.phone || '', assignedArea: initial?.assignedArea || '' })
   const [password, setPassword] = useState('')
   const [saving, setSaving] = useState(false)
+  
   const set = (k, v) => setForm(p => ({ ...p, [k]: v }))
-  const save = async (e) => {
+  
+  const handleSubmit = async (e) => {
     e.preventDefault()
     setSaving(true)
     const dataToSave = {
@@ -18,14 +21,15 @@ const AgentForm = ({ initial, onSave, onClose }) => {
     await onSave(dataToSave)
     setSaving(false)
   }
+
   return (
-    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-      <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-md shadow-2xl animate-fade-in">
+    <Modal onClose={onClose}>
+      <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full shadow-2xl overflow-hidden">
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800">
           <h2 className="font-bold text-white text-lg">{initial ? 'Edit Agent' : 'Add Delivery Agent'}</h2>
           <button onClick={onClose} className="p-2 rounded-xl text-slate-400 hover:bg-slate-800"><span>×</span></button>
         </div>
-        <form onSubmit={save} className="px-6 py-5 space-y-4">
+        <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
           <div><label className="form-label">Full Name *</label><input className="form-input" value={form.name} onChange={e => set('name', e.target.value)} required /></div>
           <div><label className="form-label">Phone *</label><input className="form-input" type="tel" value={form.phone} onChange={e => set('phone', e.target.value)} maxLength={10} required /></div>
           
@@ -57,7 +61,7 @@ const AgentForm = ({ initial, onSave, onClose }) => {
           </div>
         </form>
       </div>
-    </div>
+    </Modal>
   )
 }
 

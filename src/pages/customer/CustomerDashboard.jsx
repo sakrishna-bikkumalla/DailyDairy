@@ -72,10 +72,10 @@ const CustomerDashboard = () => {
               <p className="text-xs text-slate-500 mt-1">No delivery scheduled today</p>
             )}
           </div>
-          {customer && (
+          {todayDelivery && (
             <div className="text-right">
               <p className="text-sm text-slate-400">Daily quota</p>
-              <p className="text-xl font-bold text-white">{formatMl(customer.dailyMilkMl)}</p>
+              <p className="text-xl font-bold text-white">{formatMl(todayDelivery.milkScheduledMl)}</p>
             </div>
           )}
         </div>

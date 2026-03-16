@@ -3,7 +3,6 @@ import { MdRefresh, MdCheckCircle, MdPending, MdLocalShipping, MdPersonAdd } fro
 import {
   createDailyDeliveries, getDeliveriesByDate, getDeliveryStats, assignAgent
 } from '../../services/deliveryService'
-import { getCustomers } from '../../services/customerService'
 import { getAgents } from '../../services/agentService'
 import { getTodayString, formatDate } from '../../utils/dateUtils'
 import { formatMl } from '../../utils/mlUtils'
@@ -44,11 +43,13 @@ const DailyDeliveries = () => {
   const handleGenerate = async () => {
     setGenerating(true)
     try {
-      const customers = await getCustomers()
-      if (customers.length === 0) { toast.error('No customers found'); return }
-      const result = await createDailyDeliveries(date, customers)
-      if (result.alreadyExists) toast.error('Deliveries already generated for this date')
-      else { toast.success(`Generated ${result.created} deliveries`); load() }
+      const result = await createDailyDeliveries(date)
+      if (result.created > 0) {
+        toast.success(`Generated ${result.created} new deliveries`)
+        load()
+      } else {
+        toast.success('All deliveries are already up to date')
+      }
     } catch (e) {
       toast.error(e.message || 'Failed to generate')
     } finally {
@@ -101,17 +102,16 @@ const DailyDeliveries = () => {
         </DeliveryProgressBar>
       )}
 
-      {/* Generate button */}
-      {deliveries.length === 0 && !loading && (
-        <div className="card text-center py-12 mb-6">
-          <MdLocalShipping className="text-5xl text-slate-600 mx-auto mb-3" />
-          <p className="text-slate-400 mb-4">No deliveries generated for <strong>{formatDate(date)}</strong></p>
-          <button onClick={handleGenerate} disabled={generating} className="btn-primary mx-auto">
-            {generating ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <MdRefresh />}
-            {generating ? 'Generating...' : 'Generate Deliveries'}
-          </button>
-        </div>
-      )}
+      {/* Generate/Sync button */}
+      <div className="mb-6 flex justify-end">
+        <button 
+          onClick={handleGenerate} 
+          disabled={generating} 
+          className="btn-primary"
+        >
+          {generating ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <MdRefresh className="text-xl" />}
+        </button>
+      </div>
 
       {/* Delivery list */}
       {loading ? (
@@ -120,47 +120,46 @@ const DailyDeliveries = () => {
         <div className="card p-0 overflow-hidden">
           <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700/50">
             <h3 className="font-semibold text-white text-sm">{deliveries.length} deliveries · {formatDate(date)}</h3>
-            <button onClick={handleGenerate} disabled className="text-xs text-slate-600 cursor-not-allowed">Already generated</button>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-slate-700/50 bg-slate-800/30 text-xs text-slate-400 uppercase">
-                  <th className="text-left px-4 py-3">Customer</th>
-                  <th className="text-left px-4 py-3">Milk (ml)</th>
-                  <th className="text-left px-4 py-3">Assign Agent</th>
-                  <th className="text-left px-4 py-3">Photo</th>
-                  <th className="text-left px-4 py-3">Status</th>
+                <tr className="border-b border-white/5 bg-white/5 text-[10px] text-slate-500 uppercase tracking-[0.2em] font-black">
+                  <th className="text-left px-6 py-4">Customer</th>
+                  <th className="text-left px-6 py-4">Milk (ml)</th>
+                  <th className="text-left px-6 py-4">Assign Agent</th>
+                  <th className="text-left px-6 py-4">Photo</th>
+                  <th className="text-left px-6 py-4">Status</th>
                 </tr>
               </thead>
               <tbody>
                 {deliveries.map(d => (
                   <tr key={d.id} className="table-row">
-                    <td className="px-4 py-3">
-                      <p className="font-medium text-white">{d.customerName}</p>
-                      <p className="text-xs text-slate-500">{d.customerAddress}</p>
+                    <td className="px-6 py-4">
+                      <p className="font-semibold text-white tracking-tight">{d.customerName}</p>
+                      <p className="text-xs text-slate-500 mt-0.5">{d.customerAddress}</p>
                     </td>
-                    <td className="px-4 py-3"><span className="badge-green">{formatMl(d.milkScheduledMl)}</span></td>
-                    <td className="px-4 py-3">
+                    <td className="px-6 py-4"><span className="badge-green">{formatMl(d.milkScheduledMl)}</span></td>
+                    <td className="px-6 py-4">
                       <select
                         value={d.agentId || ''}
                         onChange={e => handleAssignAgent(d.id, e.target.value || null)}
-                        className="bg-slate-700 border border-slate-600 text-slate-200 rounded-lg px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-dairy-green-500"
+                        className="bg-slate-900/40 backdrop-blur-md border border-white/10 text-slate-300 rounded-xl px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-dairy-green-500/50 transition-all cursor-pointer hover:bg-white/5"
                       >
                         <option value="">Unassigned</option>
                         {agents.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
                       </select>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-6 py-4">
                       {d.photoUrl ? (
-                        <a href={d.photoUrl} target="_blank" rel="noreferrer" className="block w-12 h-12 rounded overflow-hidden border border-slate-600 hover:border-dairy-green-400 transition-colors">
+                        <a href={d.photoUrl} target="_blank" rel="noreferrer" className="block w-10 h-10 rounded-xl overflow-hidden border border-white/10 hover:border-dairy-green-500/50 transition-all hover:scale-110 shadow-lg">
                           <img src={d.photoUrl} alt="Delivery verification" className="w-full h-full object-cover" />
                         </a>
                       ) : (
-                        <span className="text-xs text-slate-500">-</span>
+                        <span className="text-[10px] text-slate-600 font-bold uppercase tracking-widest">No Photo</span>
                       )}
                     </td>
-                    <td className="px-4 py-3">{statusBadge[d.status] || d.status}</td>
+                    <td className="px-6 py-4">{statusBadge[d.status] || d.status}</td>
                   </tr>
                 ))}
               </tbody>

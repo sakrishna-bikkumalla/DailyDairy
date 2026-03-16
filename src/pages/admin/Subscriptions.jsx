@@ -3,11 +3,10 @@ import { MdAssignment, MdLocalShipping, MdAttachMoney, MdClose, MdRefresh, MdSea
 import { GiMilkCarton } from 'react-icons/gi'
 import { getCustomers } from '../../services/customerService'
 import { getAgents } from '../../services/agentService'
-import { getCustomerSubscriptionDetails, addSubscription, updateSubscription } from '../../services/subscriptionService'
+import { getCustomerSubscriptionDetails, addSubscription, updateSubscription, syncPendingDeliveries } from '../../services/subscriptionService'
 import { getCustomerRequests, submitRequest } from '../../services/requestService'
-import { calculateMonthlyBilling } from '../../services/billingService'
 import { formatMl, mlToLiters } from '../../utils/mlUtils'
-import { formatDate, getMonthName } from '../../utils/dateUtils'
+import { formatDate } from '../../utils/dateUtils'
 import toast from 'react-hot-toast'
 import SubscriptionForm from './forms/SubscriptionForm'
 import RequestForm from './forms/RequestForm'
@@ -39,8 +38,7 @@ const Subscriptions = () => {
   const [agents, setAgents] = useState([])
 
   // Billing Tab States
-  const [billingMonth, setBillingMonth] = useState(new Date().getMonth() + 1)
-  const [billingYear, setBillingYear] = useState(new Date().getFullYear())
+  const [billingSelectedSubId, setBillingSelectedSubId] = useState('')
   const [billingData, setBillingData] = useState(null)
   const [billingLoading, setBillingLoading] = useState(false)
 
@@ -89,6 +87,7 @@ const Subscriptions = () => {
     setHistoryFilterFromDate('')
     setHistoryFilterToDate('')
     setHistoryFilterAgent('')
+    setBillingSelectedSubId('')
     setBillingData(null) // Reset billing data when switching customers
     loadDetails(id)
   }
@@ -96,11 +95,13 @@ const Subscriptions = () => {
   // Save Handlers
   const handleSaveSub = async (data) => {
     try {
-      if (editSub) {
+      if (editSub) { // Assuming editSub is the object, so editSub.id is the ID
         await updateSubscription(editSub.id, data)
+        await syncPendingDeliveries(editSub.id) // Call syncPendingDeliveries with the ID of the updated subscription
         toast.success("Subscription updated")
       } else {
-        await addSubscription(data)
+        const docRef = await addSubscription(data) // addSubscription now returns a docRef
+        await syncPendingDeliveries(docRef.id) // Call syncPendingDeliveries with the ID of the newly added subscription
         toast.success("Subscription added")
       }
       setShowSubForm(false)
@@ -125,13 +126,46 @@ const Subscriptions = () => {
   }
 
   const handleCalculateBill = async () => {
-    if (!selectedCustomerId) return
+    if (!selectedCustomerId || !billingSelectedSubId) return
+    const sub = details.subscriptions.find(s => s.id === billingSelectedSubId)
+    if (!sub) return
+
     setBillingLoading(true)
     try {
-      const data = await calculateMonthlyBilling(selectedCustomerId, billingMonth, billingYear)
-      setBillingData(data)
+      // 1. Regular deliveries from sub.history (which is already filtered by dates)
+      const baseDeliveries = sub.history.filter(d => d.status === 'delivered')
+      const baseTotalMl = baseDeliveries.reduce((sum, d) => sum + (d.milkDeliveredMl || 0), 0)
+      const baseTotalLiters = baseTotalMl / 1000
+      const price = sub.pricePerLiter || 60
+      const baseCost = baseTotalLiters * price
+
+      // 2. Extra requests (approved extra_milk within dates)
+      const extraRequests = requests.filter(r => 
+        r.requestType === 'extra_milk' && 
+        r.status === 'approved' &&
+        r.date >= sub.startDate &&
+        r.date <= sub.endDate
+      )
+      const extraTotalMl = extraRequests.reduce((sum, r) => sum + (r.milkMl || 0), 0)
+      const extraTotalLiters = extraTotalMl / 1000
+      const extraCost = extraTotalLiters * price
+
+      // 3. Prepare combined data for UI
+      setBillingData({
+        sub,
+        baseDeliveries,
+        extraRequests,
+        summary: {
+          baseCost,
+          extraCost,
+          totalAmount: baseCost + extraCost,
+          baseLiters: baseTotalLiters,
+          extraLiters: extraTotalLiters,
+          pricePerLiter: price
+        }
+      })
     } catch (e) {
-      toast.error(e.message || 'Failed to calculate bill')
+      toast.error('Failed to calculate bill')
     } finally {
       setBillingLoading(false)
     }
@@ -317,7 +351,7 @@ const Subscriptions = () => {
                                   <p className="text-xs text-slate-400 mt-1">out of {selectedSub.metrics.deliveriesScheduled} logged events</p>
                                 </div>
                                 <div className="bg-slate-900 p-3 rounded-xl border border-blue-500/20 lg:col-span-2 shrink-0">
-                                  <p className="text-[10px] text-blue-400 uppercase font-semibold mb-1">Cost Tracking (₹{selectedSub.pricePerLiter || details.customer.pricePerLiter}/L)</p>
+                                  <p className="text-[10px] text-blue-400 uppercase font-semibold mb-1">Cost Tracking (₹{selectedSub.pricePerLiter || 60}/L)</p>
                                   <div className="flex justify-between items-end mt-1">
                                     <div>
                                       <span className="text-xs text-slate-400 block">Actual Billed Cost</span>
@@ -456,20 +490,24 @@ const Subscriptions = () => {
                       </div>
 
                       <div className="card border border-slate-700 p-4 mb-6 relative z-20">
-                        <div className="grid sm:grid-cols-2 gap-4">
+                        <div className="flex flex-col gap-4">
                           <div>
-                            <label className="form-label">Month</label>
-                            <select value={billingMonth} onChange={e => { setBillingMonth(Number(e.target.value)); setBillingData(null) }} className="form-input bg-slate-800">
-                              {[...Array(12)].map((_, i) => <option key={i+1} value={i+1}>{getMonthName(i+1)}</option>)}
+                            <label className="form-label">Select Subscription</label>
+                            <select 
+                              value={billingSelectedSubId} 
+                              onChange={e => { setBillingSelectedSubId(e.target.value); setBillingData(null) }} 
+                              className="form-input bg-slate-800"
+                            >
+                              <option value="">Choose a plan...</option>
+                              {details.subscriptions.map(s => (
+                                <option key={s.id} value={s.id}>
+                                  {formatDate(s.startDate)} to {formatDate(s.endDate)} ({s.status})
+                                </option>
+                              ))}
                             </select>
                           </div>
-                          <div>
-                            <label className="form-label">Year</label>
-                            <input type="number" value={billingYear} onChange={e => { setBillingYear(Number(e.target.value)); setBillingData(null) }}
-                              className="form-input bg-slate-800" min={2020} max={2030} />
-                          </div>
                         </div>
-                        <button onClick={handleCalculateBill} disabled={billingLoading} className="btn-primary mt-4 w-full justify-center">
+                        <button onClick={handleCalculateBill} disabled={billingLoading || !billingSelectedSubId} className="btn-primary mt-4 w-full justify-center">
                           {billingLoading ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <MdReceipt />}
                           Calculate Bill
                         </button>
@@ -481,58 +519,86 @@ const Subscriptions = () => {
                           <div className="flex items-start justify-between mb-6 pb-4 border-b border-slate-700/50">
                             <div>
                               <h3 className="text-xl font-bold text-white">Invoice Summary</h3>
-                              <p className="text-slate-400">{getMonthName(billingData.month)} {billingData.year}</p>
+                              <p className="text-slate-400">{formatDate(billingData.sub.startDate)} — {formatDate(billingData.sub.endDate)}</p>
                             </div>
                             <button onClick={() => window.print()} className="btn-secondary text-sm px-3 py-1.5 h-auto">
                               <MdPrint /> Print
                             </button>
                           </div>
 
-                          <div className="space-y-2 mb-6 bg-slate-800/50 p-4 rounded-xl border border-slate-700">
-                            <div className="flex justify-between py-2 border-b border-slate-700/50">
-                              <span className="text-slate-400 text-sm">Total Deliveries</span>
-                              <span className="text-white font-medium">{billingData.deliveries.length} days</span>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                            <div className="space-y-2 bg-slate-800/50 p-4 rounded-xl border border-slate-700">
+                              <p className="text-xs text-slate-500 uppercase font-bold mb-2">Regular Deliveries</p>
+                              <div className="flex justify-between py-1 border-b border-white/5">
+                                <span className="text-slate-400 text-sm">Count</span>
+                                <span className="text-white font-medium">{billingData.baseDeliveries.length} days</span>
+                              </div>
+                              <div className="flex justify-between py-1 border-b border-white/5">
+                                <span className="text-slate-400 text-sm">Volume</span>
+                                <span className="text-white font-medium">{billingData.summary.baseLiters.toFixed(2)}L</span>
+                              </div>
+                              <div className="flex justify-between py-1">
+                                <span className="text-slate-400 text-sm">Cost</span>
+                                <span className="text-white font-bold">₹{billingData.summary.baseCost.toFixed(2)}</span>
+                              </div>
                             </div>
-                            <div className="flex justify-between py-2 border-b border-slate-700/50">
-                              <span className="text-slate-400 text-sm">Total Milk</span>
-                              <span className="text-white font-medium">{formatMl(billingData.totalMl)} ({billingData.totalLiters.toFixed(2)}L)</span>
-                            </div>
-                            <div className="flex justify-between py-2 border-b border-slate-700/50">
-                              <span className="text-slate-400 text-sm">Effective Rate</span>
-                              <span className="text-slate-300 font-medium text-sm">₹{billingData.pricePerLiter}/Liter</span>
-                            </div>
-                            <div className="flex justify-between py-2">
-                              <span className="text-lg font-bold text-white">Total Amount</span>
-                              <span className="text-2xl font-bold text-dairy-green-400">₹{billingData.totalAmount.toFixed(2)}</span>
+
+                            <div className="space-y-2 bg-blue-900/10 p-4 rounded-xl border border-blue-500/20">
+                              <p className="text-xs text-blue-400 uppercase font-bold mb-2">Extra Requests</p>
+                              <div className="flex justify-between py-1 border-b border-white/5">
+                                <span className="text-slate-400 text-sm">Count</span>
+                                <span className="text-white font-medium">{billingData.extraRequests.length} requests</span>
+                              </div>
+                              <div className="flex justify-between py-1 border-b border-white/5">
+                                <span className="text-slate-400 text-sm">Volume</span>
+                                <span className="text-white font-medium">{billingData.summary.extraLiters.toFixed(2)}L</span>
+                              </div>
+                              <div className="flex justify-between py-1">
+                                <span className="text-slate-400 text-sm">Cost</span>
+                                <span className="text-blue-400 font-bold">₹{billingData.summary.extraCost.toFixed(2)}</span>
+                              </div>
                             </div>
                           </div>
 
-                          {/* Delivery detail table */}
+                          <div className="flex justify-between items-center bg-slate-800 p-4 rounded-xl border border-slate-700 mb-6 font-bold">
+                            <span className="text-lg text-white">Total Bill Amount <span className="text-xs font-normal text-slate-400 block">at ₹{billingData.summary.pricePerLiter}/L</span></span>
+                            <span className="text-3xl text-dairy-green-400">₹{billingData.summary.totalAmount.toFixed(2)}</span>
+                          </div>
+
+                          {/* Combined Table */}
                           <div className="flex-1 overflow-y-auto max-h-[300px] custom-scrollbar rounded-xl border border-slate-700/50 bg-slate-900">
-                            {billingData.deliveries.length > 0 ? (
-                              <table className="w-full text-sm">
-                                <thead className="sticky top-0 bg-slate-800 text-slate-400 uppercase text-xs">
-                                  <tr>
-                                    <th className="text-left font-medium py-3 px-4">Date</th>
-                                    <th className="text-left font-medium py-3 px-4">Delivered</th>
-                                    <th className="text-right font-medium py-3 px-4">Cost</th>
+                            <table className="w-full text-sm">
+                              <thead className="sticky top-0 bg-slate-800 text-slate-400 uppercase text-xs">
+                                <tr>
+                                  <th className="text-left font-medium py-3 px-4">Date</th>
+                                  <th className="text-left font-medium py-3 px-4">Type</th>
+                                  <th className="text-left font-medium py-3 px-4">Quantity</th>
+                                  <th className="text-right font-medium py-3 px-4">Cost</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {/* Mix and Sort regular vs extra */}
+                                {[
+                                  ...billingData.baseDeliveries.map(d => ({ ...d, billingType: 'Regular' })),
+                                  ...billingData.extraRequests.map(r => ({ ...r, date: r.date, milkDeliveredMl: r.milkMl, billingType: 'Extra Request' }))
+                                ]
+                                .sort((a, b) => b.date.localeCompare(a.date))
+                                .map((item, idx) => (
+                                  <tr key={idx} className="border-b border-slate-800/50">
+                                    <td className="py-2.5 px-4 text-slate-300">{formatDate(item.date)}</td>
+                                    <td className="py-2.5 px-4">
+                                      <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full ${item.billingType === 'Regular' ? 'bg-slate-800 text-slate-400' : 'bg-blue-900/30 text-blue-400'}`}>
+                                        {item.billingType}
+                                      </span>
+                                    </td>
+                                    <td className="py-2.5 px-4 text-slate-300">{formatMl(item.milkDeliveredMl)}</td>
+                                    <td className="py-2.5 px-4 text-right font-medium text-dairy-green-400">
+                                      ₹{(mlToLiters(item.milkDeliveredMl) * billingData.summary.pricePerLiter).toFixed(2)}
+                                    </td>
                                   </tr>
-                                </thead>
-                                <tbody>
-                                  {billingData.deliveries.map(d => (
-                                    <tr key={d.id} className="border-b border-slate-800/50">
-                                      <td className="py-2.5 px-4 text-slate-300">{formatDate(d.date)}</td>
-                                      <td className="py-2.5 px-4 text-slate-300">{formatMl(d.milkDeliveredMl)}</td>
-                                      <td className="py-2.5 px-4 text-right font-medium text-dairy-green-400">
-                                        ₹{(mlToLiters(d.milkDeliveredMl) * billingData.pricePerLiter).toFixed(2)}
-                                      </td>
-                                    </tr>
-                                  ))}
-                                </tbody>
-                              </table>
-                            ) : (
-                              <p className="text-slate-500 text-sm text-center py-8">No completed deliveries recorded this month.</p>
-                            )}
+                                ))}
+                              </tbody>
+                            </table>
                           </div>
                         </div>
                       )}

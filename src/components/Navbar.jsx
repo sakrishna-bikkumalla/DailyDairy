@@ -9,7 +9,7 @@ const Navbar = ({ onMenuClick }) => {
 
   return (
     <>
-      <header className="h-16 bg-slate-900/80 backdrop-blur-md border-b border-slate-800 flex items-center justify-between px-4 lg:px-6 sticky top-0 z-10">
+      <header className="h-16 bg-slate-900/40 backdrop-blur-xl border-b border-white/5 flex items-center justify-between px-4 lg:px-6 sticky top-0 z-10 shadow-lg">
         <button
           onClick={onMenuClick}
           className="lg:hidden p-2 rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition-colors"
