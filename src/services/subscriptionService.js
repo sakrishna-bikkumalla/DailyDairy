@@ -42,7 +42,43 @@ export const updateSubscription = async (id, data) => {
 }
 
 export const deleteSubscription = async (id) => {
-  return await deleteDoc(doc(db, COLLECTION, id))
+  // Perform soft delete
+  await updateDoc(doc(db, COLLECTION, id), {
+    status: 'deleted',
+    updatedAt: serverTimestamp()
+  })
+  return await cancelFutureDeliveries(id)
+}
+
+export const stopSubscription = async (id) => {
+  await updateDoc(doc(db, COLLECTION, id), {
+    status: 'stopped',
+    updatedAt: serverTimestamp()
+  })
+  return await cancelFutureDeliveries(id)
+}
+
+export const resumeSubscription = async (id) => {
+  return await updateDoc(doc(db, COLLECTION, id), {
+    status: 'active',
+    updatedAt: serverTimestamp()
+  })
+}
+
+/**
+ * Cancels all pending deliveries associated with a subscription.
+ * Used when a subscription is stopped or deleted.
+ */
+export const cancelFutureDeliveries = async (subscriptionId) => {
+  const q = query(
+    collection(db, 'deliveries'),
+    where('subscriptionId', '==', subscriptionId),
+    where('status', '==', 'pending')
+  )
+  
+  const snap = await getDocs(q)
+  const promises = snap.docs.map(d => deleteDoc(doc(db, 'deliveries', d.id)))
+  await Promise.all(promises)
 }
 
 // --- Analytics & Details ---

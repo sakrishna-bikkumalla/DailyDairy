@@ -1,9 +1,9 @@
 import React, { useEffect, useState, useMemo } from 'react'
-import { MdAssignment, MdLocalShipping, MdAttachMoney, MdClose, MdRefresh, MdSearch, MdAdd, MdFilterList, MdDateRange, MdAccessTime, MdEdit, MdReceipt, MdPrint } from 'react-icons/md'
+import { MdAssignment, MdLocalShipping, MdAttachMoney, MdClose, MdRefresh, MdSearch, MdAdd, MdFilterList, MdDateRange, MdAccessTime, MdEdit, MdReceipt, MdPrint, MdPause, MdPlayArrow, MdDelete } from 'react-icons/md'
 import { GiMilkCarton } from 'react-icons/gi'
 import { getCustomers } from '../../services/customerService'
 import { getAgents } from '../../services/agentService'
-import { getCustomerSubscriptionDetails, addSubscription, updateSubscription, syncPendingDeliveries } from '../../services/subscriptionService'
+import { getCustomerSubscriptionDetails, addSubscription, updateSubscription, syncPendingDeliveries, stopSubscription, resumeSubscription, deleteSubscription } from '../../services/subscriptionService'
 import { getCustomerRequests, submitRequest } from '../../services/requestService'
 import { formatMl, mlToLiters } from '../../utils/mlUtils'
 import { formatDate } from '../../utils/dateUtils'
@@ -122,6 +122,38 @@ const Subscriptions = () => {
       loadDetails(selectedCustomerId)
     } catch {
       toast.error("Failed to log request")
+    }
+  }
+
+  const handleStopSub = async (id) => {
+    if (!window.confirm("Are you sure you want to stop this subscription? All future pending deliveries will be cancelled.")) return
+    try {
+      await stopSubscription(id)
+      toast.success("Subscription stopped")
+      loadDetails(selectedCustomerId)
+    } catch {
+      toast.error("Failed to stop subscription")
+    }
+  }
+
+  const handleResumeSub = async (id) => {
+    try {
+      await resumeSubscription(id)
+      toast.success("Subscription resumed")
+      loadDetails(selectedCustomerId)
+    } catch {
+      toast.error("Failed to resume subscription")
+    }
+  }
+
+  const handleDeleteSub = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this subscription? It will be moved to the deleted tab and all future deliveries will be cancelled.")) return
+    try {
+      await deleteSubscription(id)
+      toast.success("Subscription deleted")
+      loadDetails(selectedCustomerId)
+    } catch {
+      toast.error("Failed to delete subscription")
     }
   }
 
@@ -266,7 +298,7 @@ const Subscriptions = () => {
 
                   {/* Tabs */}
                   <div className="flex gap-4 mb-6 border-b border-slate-700">
-                    {['subscriptions', 'requests', 'billing'].map(tab => (
+                    {['subscriptions', 'requests', 'billing', 'deleted'].map(tab => (
                       <button 
                         key={tab}
                         onClick={() => setActiveTab(tab)}
@@ -297,28 +329,59 @@ const Subscriptions = () => {
                         </div>
                       ) : (
                         <div className="grid grid-cols-[300px_1fr] gap-6 flex-1 items-start">
-                          
-                          {/* Plan List Sidebar */}
+                                                   {/* Plan List Sidebar */}
                           <div className="space-y-3 pr-2 overflow-y-auto max-h-[500px] custom-scrollbar">
-                            {details.subscriptions.map(s => (
-                              <div 
-                                key={s.id}
-                                onClick={() => setSelectedSubId(s.id)}
-                                className={`cursor-pointer rounded-xl border p-4 transition-all ${
-                                  selectedSubId === s.id ? 'bg-blue-900/20 border-blue-500 shrink-0 shadow-md ring-1 ring-blue-500/50' : 'bg-slate-800 border-slate-700 hover:border-slate-500'
-                                }`}
-                              >
-                                <div className="flex justify-between items-start mb-2">
-                                  <span className={`badge ${s.status === 'active' ? 'badge-green' : s.status==='completed' ? 'badge-blue' : 'badge-red'}`}>
-                                    {s.status}
-                                  </span>
-                                  <button 
-                                    onClick={(e) => { e.stopPropagation(); setEditSub(s); setShowSubForm(true) }} 
-                                    className="p-1 rounded text-slate-400 hover:text-white hover:bg-slate-700"
-                                  >
-                                    <MdEdit />
-                                  </button>
-                                </div>
+                            {details.subscriptions
+                              .filter(s => s.status !== 'deleted')
+                              .map(s => (
+                                <div 
+                                  key={s.id}
+                                  onClick={() => setSelectedSubId(s.id)}
+                                  className={`cursor-pointer rounded-xl border p-4 transition-all ${
+                                    selectedSubId === s.id ? 'bg-blue-900/20 border-blue-500 shrink-0 shadow-md ring-1 ring-blue-500/50' : 'bg-slate-800 border-slate-700 hover:border-slate-500'
+                                  }`}
+                                >
+                                  <div className="flex justify-between items-start mb-2">
+                                    <div className="flex gap-1">
+                                      <span className={`badge ${s.status === 'active' ? 'badge-green' : s.status==='completed' ? 'badge-blue' : s.status === 'stopped' ? 'badge-amber' : 'badge-red'}`}>
+                                        {s.status}
+                                      </span>
+                                    </div>
+                                    <div className="flex gap-1">
+                                      {s.status === 'active' && (
+                                        <button 
+                                          onClick={(e) => { e.stopPropagation(); handleStopSub(s.id) }} 
+                                          className="p-1 rounded text-amber-500 hover:bg-amber-500/10"
+                                          title="Stop/Pause Subscription"
+                                        >
+                                          <MdPause />
+                                        </button>
+                                      )}
+                                      {s.status === 'stopped' && (
+                                        <button 
+                                          onClick={(e) => { e.stopPropagation(); handleResumeSub(s.id) }} 
+                                          className="p-1 rounded text-dairy-green-500 hover:bg-dairy-green-500/10"
+                                          title="Resume Subscription"
+                                        >
+                                          <MdPlayArrow />
+                                        </button>
+                                      )}
+                                      <button 
+                                        onClick={(e) => { e.stopPropagation(); setEditSub(s); setShowSubForm(true) }} 
+                                        className="p-1 rounded text-slate-400 hover:text-white hover:bg-slate-700"
+                                        title="Edit Plan"
+                                      >
+                                        <MdEdit />
+                                      </button>
+                                      <button 
+                                        onClick={(e) => { e.stopPropagation(); handleDeleteSub(s.id) }} 
+                                        className="p-1 rounded text-red-500 hover:bg-red-500/10"
+                                        title="Delete Subscription"
+                                      >
+                                        <MdDelete />
+                                      </button>
+                                    </div>
+                                  </div>
                                 <div className="text-sm text-white font-medium mb-1">
                                   {formatDate(s.startDate)} <span className="text-slate-500 mx-1">→</span> {formatDate(s.endDate)}
                                 </div>
@@ -600,6 +663,48 @@ const Subscriptions = () => {
                               </tbody>
                             </table>
                           </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* TAB: DELETED */}
+                  {activeTab === 'deleted' && (
+                    <div className="flex-1 flex flex-col">
+                      <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-lg font-bold text-white">Deleted Subscriptions</h3>
+                      </div>
+
+                      {details.subscriptions.filter(s => s.status === 'deleted').length === 0 ? (
+                        <div className="text-center py-12 bg-slate-800/30 rounded-xl border border-slate-700/50 flex-1">
+                          <MdDelete className="text-5xl text-slate-600 mx-auto mb-3" />
+                          <p className="text-slate-400 text-sm">No deleted subscriptions found.</p>
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {details.subscriptions
+                            .filter(s => s.status === 'deleted')
+                            .map(s => (
+                              <div key={s.id} className="bg-slate-800 border border-slate-700 rounded-xl p-4 opacity-75">
+                                <div className="flex justify-between items-start mb-2">
+                                  <span className="badge badge-red uppercase tracking-wider text-[10px]">DELETED</span>
+                                  <button 
+                                    onClick={() => handleResumeSub(s.id)} 
+                                    className="text-xs text-blue-400 hover:underline uppercase font-bold"
+                                  >
+                                    Restore
+                                  </button>
+                                </div>
+                                <div className="text-sm text-white font-medium">
+                                  {formatDate(s.startDate)} <span className="text-slate-500 mx-1">→</span> {formatDate(s.endDate)}
+                                </div>
+                                <div className="flex gap-2 text-xs text-slate-400 mt-3">
+                                  <span>{s.slot}</span>
+                                  <span>•</span>
+                                  <span>{formatMl(s.dailyQuantityMl)}</span>
+                                </div>
+                              </div>
+                            ))}
                         </div>
                       )}
                     </div>
