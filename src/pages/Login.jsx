@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { GiMilkCarton } from 'react-icons/gi'
 import { MdPhone, MdLock, MdLogin } from 'react-icons/md'
 import { useAuth } from '../contexts/AuthContext'
@@ -149,8 +149,11 @@ const Login = () => {
                     className="form-input pl-12 bg-slate-950/40 border-slate-800 focus:border-dairy-green-500/50"
                     placeholder="10-digit phone number"
                     value={phone}
-                    onChange={e => setPhone(e.target.value)}
+                    onChange={e => setPhone(e.target.value.replace(/\D/g, ''))}
+                    minLength={10}
                     maxLength={10}
+                    pattern="[0-9]{10}"
+                    required
                   />
                 </div>
               </div>
@@ -171,6 +174,11 @@ const Login = () => {
                 {loading ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <MdLogin className="text-xl" />}
                 {loading ? 'Signing in...' : 'Sign In'}
               </button>
+              <div className="text-center mt-4">
+                <Link to="/signup" className="text-xs text-slate-400 hover:text-white font-medium transition-colors">
+                  Don't have an admin account? Sign-up
+                </Link>
+              </div>
             </form>
 
             {/* Demo section */}

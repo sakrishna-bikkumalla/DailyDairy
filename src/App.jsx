@@ -5,6 +5,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext'
 
 // Pages
 import Login from './pages/Login'
+import Signup from './pages/Signup'
 import AdminDashboard from './pages/admin/Dashboard'
 import Customers from './pages/admin/Customers'
 import Agents from './pages/admin/Agents'
@@ -51,6 +52,7 @@ function App() {
         />
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
           <Route path="/" element={<HomeRedirect />} />
 
           {/* Admin Routes */}

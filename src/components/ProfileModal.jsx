@@ -4,7 +4,7 @@ import {
   MdClose, MdPhone, MdPerson, MdShield, MdLogout,
   MdAccessTime, MdEdit, MdSave, MdLock, MdVisibility,
   MdVisibilityOff, MdArrowBack, MdLocationOn, MdMyLocation,
-  MdHome, MdLocalDrink, MdAttachMoney, MdEmail, MdLink
+  MdHome, MdLocalDrink, MdAttachMoney, MdEmail, MdLink, MdBusiness, MdLocationCity
 } from 'react-icons/md'
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
@@ -157,6 +157,12 @@ const ViewProfile = ({ user, customerData, meta, loading, onEdit, onLogout }) =>
           <InfoRow icon={<MdPhone />} label="Phone Number" value={formatPhone(user?.phone)} meta={meta} />
           {user?.email && <InfoRow icon={<MdEmail />} label="Email" value={user.email} meta={meta} />}
           {!user?.email && isCustomer && <InfoRow icon={<MdEmail />} label="Email" value={null} meta={meta} />}
+          {user?.role === 'admin' && (
+            <>
+              <InfoRow icon={<MdBusiness />} label="Company Name" value={user?.companyName} meta={meta} />
+              <InfoRow icon={<MdLocationCity />} label="Company Location" value={user?.companyLocation} meta={meta} />
+            </>
+          )}
           <InfoRow icon={<MdShield />} label="Role" value={user?.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : '—'} meta={meta} />
           {since && <InfoRow icon={<MdAccessTime />} label="Member Since" value={since} meta={meta} />}
 
@@ -237,6 +243,8 @@ const EditProfile = ({ user, customerData, meta, onBack, onSaved }) => {
   const [name, setName] = useState(user?.name || '')
   const [phone, setPhone] = useState(user?.phone || '')
   const [email, setEmail] = useState(user?.email || '')
+  const [companyName, setCompanyName] = useState(user?.companyName || '')
+  const [companyLocation, setCompanyLocation] = useState(user?.companyLocation || '')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -279,6 +287,10 @@ const EditProfile = ({ user, customerData, meta, onBack, onSaved }) => {
       if (!state.trim()) errs.state = 'State is required'
       if (!pincode.trim()) errs.pincode = 'Pincode is required'
     }
+    if (user?.role === 'admin') {
+      if (!companyName.trim()) errs.companyName = 'Company name is required'
+      if (!companyLocation.trim()) errs.companyLocation = 'Company location is required'
+    }
     setErrors(errs)
     return Object.keys(errs).length === 0
   }
@@ -290,6 +302,10 @@ const EditProfile = ({ user, customerData, meta, onBack, onSaved }) => {
       // Update users collection
       const userUpdates = { name: name.trim(), phone: phone.trim() }
       if (email) userUpdates.email = email.trim()
+      if (user?.role === 'admin') {
+        userUpdates.companyName = companyName.trim()
+        userUpdates.companyLocation = companyLocation.trim()
+      }
       if (password) userUpdates.password = password
       await updateUserProfile(user.id, userUpdates)
       updateUser(userUpdates)
@@ -350,6 +366,18 @@ const EditProfile = ({ user, customerData, meta, onBack, onSaved }) => {
         <Field label="Email (Optional)" icon={<MdEmail className="text-sm" />} error={errors.email}>
           <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="email@example.com" className={inputClass(errors.email)} />
         </Field>
+
+        {user?.role === 'admin' && (
+          <>
+            <Field label="Company Name *" icon={<MdBusiness className="text-sm" />} error={errors.companyName}>
+              <input type="text" value={companyName} onChange={e => setCompanyName(e.target.value)} placeholder="Enter company name" className={inputClass(errors.companyName)} />
+            </Field>
+
+            <Field label="Company Location *" icon={<MdLocationCity className="text-sm" />} error={errors.companyLocation}>
+              <input type="text" value={companyLocation} onChange={e => setCompanyLocation(e.target.value)} placeholder="Enter company location" className={inputClass(errors.companyLocation)} />
+            </Field>
+          </>
+        )}
 
         <Field label={<>New Password <span className="text-slate-600 font-normal">(leave blank to keep current)</span></>} icon={<MdLock className="text-sm" />} error={errors.password}>
           <div className="relative">

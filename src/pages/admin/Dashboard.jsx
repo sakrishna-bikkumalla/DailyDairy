@@ -1,70 +1,61 @@
-import React, { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import React from 'react';
+import { Link } from 'react-router-dom';
 import {
   MdPeople, MdLocalShipping, MdDeliveryDining, MdInbox,
   MdCheckCircle, MdPending, MdTrendingUp
-} from 'react-icons/md'
-import { GiMilkCarton } from 'react-icons/gi'
-import StatCard from '../../components/StatCard'
-import { getCustomers } from '../../services/customerService'
-import { getAgents } from '../../services/agentService'
-import { getDeliveryStats } from '../../services/deliveryService'
-import { getRequests } from '../../services/requestService'
-import { getTodayString, formatDateTime } from '../../utils/dateUtils'
-import { formatMl } from '../../utils/mlUtils'
-import DeliveryProgressBar from '../../components/DeliveryProgressBar'
+} from 'react-icons/md';
+import { GiMilkCarton } from 'react-icons/gi';
+import StatCard from '../../components/StatCard';
+import DeliveryProgressBar from '../../components/DeliveryProgressBar';
+import PageHeader from '../../components/common/PageHeader';
+import LoadingSpinner from '../../components/common/LoadingSpinner';
+
+// Hooks
+import { useCustomers } from '../../hooks/useCustomers';
+import { useAgents } from '../../hooks/useAgents';
+import { useDeliveries } from '../../hooks/useDeliveries';
+import { useRequests } from '../../hooks/useRequests';
+
+import { getTodayString } from '../../utils/dateUtils';
+import { formatMl } from '../../utils/mlUtils';
+import { REQUEST_STATUS, REQUEST_TYPES } from '../../constants';
 
 const AdminDashboard = () => {
-  const [stats, setStats] = useState({ total: 0, completed: 0, pending: 0, skipped: 0, totalMlScheduled: 0, totalMlDelivered: 0 })
-  const [customerCount, setCustomerCount] = useState(0)
-  const [agentCount, setAgentCount] = useState(0)
-  const [pendingRequests, setPendingRequests] = useState([])
-  const [loading, setLoading] = useState(true)
-  const today = getTodayString()
+  const today = getTodayString();
+  
+  const { customers, loading: customersLoading } = useCustomers();
+  const { agents, loading: agentsLoading } = useAgents();
+  const { stats, loading: deliveriesLoading } = useDeliveries(today);
+  const { requests: pendingRequestsData, loading: requestsLoading } = useRequests(REQUEST_STATUS.PENDING);
 
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const [custs, agents, delivStats, reqs] = await Promise.all([
-          getCustomers(),
-          getAgents(),
-          getDeliveryStats(today),
-          getRequests('pending')
-        ])
-        setCustomerCount(custs.length)
-        setAgentCount(agents.length)
-        setStats(delivStats)
-        setPendingRequests(reqs.slice(0, 5))
-      } catch (e) {
-        console.error(e)
-      } finally {
-        setLoading(false)
-      }
-    }
-    load()
-  }, [])
+  // Take top 5
+  const pendingRequests = pendingRequestsData.slice(0, 5);
 
-  const reqTypeLabel = { extra_milk: 'Extra Milk', pause_delivery: 'Pause Delivery', evening_milk: 'Evening Milk' }
+  const loading = customersLoading || agentsLoading || deliveriesLoading || requestsLoading;
+
+  const reqTypeLabel = {
+    [REQUEST_TYPES.EXTRA_MILK]: 'Extra Milk',
+    [REQUEST_TYPES.PAUSE_DELIVERY]: 'Pause Delivery',
+    [REQUEST_TYPES.EVENING_MILK]: 'Evening Milk'
+  };
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="page-header">Dashboard</h1>
-        <p className="page-subtitle">Overview of today's delivery operations · {new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
-      </div>
+      <PageHeader
+        title="Dashboard"
+        subtitle={`Overview of today's delivery operations · ${new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}`}
+      />
 
       {loading ? (
-        <div className="flex items-center justify-center h-40">
-          <div className="w-8 h-8 border-2 border-dairy-green-500 border-t-transparent rounded-full animate-spin" />
-        </div>
+        <LoadingSpinner />
       ) : (
         <>
           {/* Stat cards */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            <StatCard label="Total Customers" value={customerCount} icon={MdPeople} color="green" />
-            <StatCard label="Delivery Agents" value={agentCount} icon={MdDeliveryDining} color="blue" />
+            <StatCard label="Total Customers" value={customers.length} icon={MdPeople} color="green" />
+            <StatCard label="Delivery Agents" value={agents.length} icon={MdDeliveryDining} color="blue" />
             <StatCard label="Today's Deliveries" value={stats.total} icon={MdLocalShipping} color="amber" sub={`${formatMl(stats.totalMlScheduled)} scheduled`} />
-            <StatCard label="Pending Requests" value={pendingRequests.length} icon={MdInbox} color="red" />
+            <StatCard label="Pending Requests" value={pendingRequestsData.length} icon={MdInbox} color="red" />
           </div>
 
           {/* Today progress */}
@@ -151,7 +142,7 @@ const AdminDashboard = () => {
         </>
       )}
     </div>
-  )
-}
+  );
+};
 
-export default AdminDashboard
+export default AdminDashboard;

@@ -21,3 +21,11 @@ export const db = getFirestore(app)
 export const auth = getAuth(app)
 export const storage = getStorage(app)
 export default app
+
+// TEMPORARY DEBUG
+import { getDocs, collection } from 'firebase/firestore'
+if (typeof window !== 'undefined') {
+  window.db = db
+  window.getDocs = getDocs
+  window.collection = collection
+}

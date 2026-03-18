@@ -8,10 +8,12 @@ import { getCustomerRequests, submitRequest } from '../../services/requestServic
 import { formatMl, mlToLiters } from '../../utils/mlUtils'
 import { formatDate } from '../../utils/dateUtils'
 import toast from 'react-hot-toast'
+import { useAuth } from '../../contexts/AuthContext'
 import SubscriptionForm from './forms/SubscriptionForm'
 import RequestForm from './forms/RequestForm'
 
 const Subscriptions = () => {
+  const { adminId } = useAuth()
   const [customers, setCustomers] = useState([])
   const [loadingList, setLoadingList] = useState(true)
   
@@ -44,15 +46,16 @@ const Subscriptions = () => {
 
   const loadCustomers = async () => {
     setLoadingList(true)
-    try { setCustomers(await getCustomers()) } 
+    try { setCustomers(await getCustomers(adminId)) } 
     catch { toast.error('Failed to load customers') } 
     finally { setLoadingList(false) }
   }
 
   useEffect(() => { 
+    if (!adminId) return
     loadCustomers()
-    getAgents().then(setAgents).catch(console.error)
-  }, [])
+    getAgents(adminId).then(setAgents).catch(console.error)
+  }, [adminId])
 
   const loadDetails = async (id) => {
     setLoadingDetails(true)
@@ -100,7 +103,7 @@ const Subscriptions = () => {
         await syncPendingDeliveries(editSub.id) // Call syncPendingDeliveries with the ID of the updated subscription
         toast.success("Subscription updated")
       } else {
-        const docRef = await addSubscription(data) // addSubscription now returns a docRef
+        const docRef = await addSubscription({ ...data, adminId }) // addSubscription now returns a docRef
         await syncPendingDeliveries(docRef.id) // Call syncPendingDeliveries with the ID of the newly added subscription
         toast.success("Subscription added")
       }
@@ -115,7 +118,8 @@ const Subscriptions = () => {
     try {
       await submitRequest(data.customerId, data.customerName, data.requestType, {
         targetDate: data.targetDate,
-        description: data.description
+        description: data.description,
+        adminId
       })
       toast.success("Request logged")
       setShowReqForm(false)

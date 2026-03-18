@@ -14,9 +14,13 @@ import { db } from '../firebase/config'
 
 const COLLECTION = 'deliveries'
 
-export const createDailyDeliveries = async (date) => {
-  // 1. Fetch existing deliveries for this date to avoid duplicates
-  const qExist = query(collection(db, COLLECTION), where('date', '==', date))
+export const createDailyDeliveries = async (date, adminId) => {
+  // 1. Fetch existing deliveries for this date and admin to avoid duplicates
+  const qExist = query(
+    collection(db, COLLECTION),
+    where('date', '==', date),
+    where('adminId', '==', adminId)
+  )
   const existingSnap = await getDocs(qExist)
   const existingSubIds = new Set()
   const existingReqIds = new Set()
@@ -27,20 +31,28 @@ export const createDailyDeliveries = async (date) => {
     if (data.requestId) existingReqIds.add(data.requestId)
   })
 
-  // 2. Fetch all customers
-  const custSnap = await getDocs(collection(db, 'customers'))
+  // 2. Fetch customers belonging to this admin
+  const custSnap = await getDocs(query(
+    collection(db, 'customers'),
+    where('adminId', '==', adminId)
+  ))
   const customers = custSnap.docs.map(d => ({ id: d.id, ...d.data() }))
   const customerMap = customers.reduce((acc, c) => ({ ...acc, [c.id]: c }), {})
 
-  // 3. Fetch active subscriptions for this date
-  const subSnap = await getDocs(query(collection(db, 'subscriptions'), where('status', '==', 'active')))
+  // 3. Fetch active subscriptions for this admin's customers on this date
+  const subSnap = await getDocs(query(
+    collection(db, 'subscriptions'),
+    where('adminId', '==', adminId),
+    where('status', '==', 'active')
+  ))
   const activeSubs = subSnap.docs.map(d => ({ id: d.id, ...d.data() }))
     .filter(s => date >= s.startDate && date <= s.endDate)
     .filter(s => !existingSubIds.has(s.id)) // Only those not yet generated
 
-  // 4. Fetch approved requests for this date
+  // 4. Fetch approved requests for this admin on this date
   const reqSnap = await getDocs(query(
-    collection(db, 'requests'), 
+    collection(db, 'requests'),
+    where('adminId', '==', adminId),
     where('status', '==', 'approved')
   ))
   const allApprovedRequests = reqSnap.docs.map(d => ({ id: d.id, ...d.data() }))
@@ -77,6 +89,7 @@ export const createDailyDeliveries = async (date) => {
       status: 'pending',
       subscriptionId: sub.id,
       pricePerLiter: sub.pricePerLiter || 60,
+      adminId,
       createdAt: serverTimestamp()
     })
   })
@@ -104,6 +117,7 @@ export const createDailyDeliveries = async (date) => {
       requestId: req.id,
       requestType: req.requestType,
       pricePerLiter: price,
+      adminId,
       createdAt: serverTimestamp()
     })
   })
@@ -115,10 +129,11 @@ export const createDailyDeliveries = async (date) => {
   return { created: deliveriesToCreate.length, totalExisting: existingSnap.size }
 }
 
-export const getDeliveriesByDate = async (date) => {
+export const getDeliveriesByDate = async (date, adminId) => {
   const q = query(
     collection(db, COLLECTION),
-    where('date', '==', date)
+    where('date', '==', date),
+    where('adminId', '==', adminId)
   )
   const snap = await getDocs(q)
   let results = snap.docs.map(d => ({ id: d.id, ...d.data() }))
@@ -204,8 +219,8 @@ export const assignAgent = async (deliveryId, agentId) => {
   return await updateDoc(doc(db, COLLECTION, deliveryId), { agentId })
 }
 
-export const getDeliveryStats = async (date) => {
-  const deliveries = await getDeliveriesByDate(date)
+export const getDeliveryStats = async (date, adminId) => {
+  const deliveries = await getDeliveriesByDate(date, adminId)
   const total = deliveries.length
   const completed = deliveries.filter(d => d.status === 'delivered').length
   const pending = deliveries.filter(d => d.status === 'pending').length
@@ -223,7 +238,12 @@ export const createDeliveryForRequest = async (request) => {
   const activeTypes = ['extra_milk', 'morning_milk', 'evening_milk', 'custom']
   if (!activeTypes.includes(request.requestType)) return null
 
-  const qExist = query(collection(db, COLLECTION), where('date', '==', request.date))
+  // Check if deliveries exist for this date and admin
+  const qExist = query(
+    collection(db, COLLECTION),
+    where('date', '==', request.date),
+    where('adminId', '==', request.adminId)
+  )
   const existing = await getDocs(qExist)
   if (existing.empty) return null
 
@@ -250,6 +270,7 @@ export const createDeliveryForRequest = async (request) => {
     requestId: request.id,
     requestType: request.requestType,
     pricePerLiter: request.pricePerLiter || cust.pricePerLiter || 60,
+    adminId: request.adminId,
     createdAt: serverTimestamp()
   })
 }

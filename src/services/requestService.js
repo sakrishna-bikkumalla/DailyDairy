@@ -27,13 +27,12 @@ export const submitRequest = async (customerId, customerName, type, data) => {
   })
 }
 
-export const getRequests = async (status = null) => {
-  let q
-  if (status) {
-    q = query(collection(db, COLLECTION), where('status', '==', status))
-  } else {
-    q = query(collection(db, COLLECTION))
-  }
+export const getRequests = async (status = null, adminId = null) => {
+  let constraints = []
+  if (adminId) constraints.push(where('adminId', '==', adminId))
+  if (status) constraints.push(where('status', '==', status))
+  
+  const q = query(collection(db, COLLECTION), ...constraints)
   const snap = await getDocs(q)
   let results = snap.docs.map(d => ({ id: d.id, ...d.data() }))
   results.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0))

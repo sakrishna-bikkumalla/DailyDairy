@@ -12,10 +12,14 @@ import {
 } from 'firebase/firestore'
 import { db } from '../firebase/config'
 
-export const updateUserProfile = async (userId, { name, phone, password }) => {
+export const updateUserProfile = async (userId, data) => {
+  const { name, phone, password, email, companyName, companyLocation } = data;
   const updates = {}
   if (name !== undefined) updates.name = name.trim()
   if (phone !== undefined) updates.phone = phone.trim()
+  if (email !== undefined) updates.email = email.trim()
+  if (companyName !== undefined) updates.companyName = companyName.trim()
+  if (companyLocation !== undefined) updates.companyLocation = companyLocation.trim()
   if (password) updates.password = password  // only update if provided (non-empty)
   updates.updatedAt = serverTimestamp()
   await updateDoc(doc(db, 'users', userId), updates)
@@ -26,9 +30,14 @@ export const updateUserProfile = async (userId, { name, phone, password }) => {
 // Here we store users with: phone, passwordHash, role, name, linkedId (customerId or agentId)
 
 export const loginWithPhone = async (phone, password) => {
-  const q = query(collection(db, 'users'), where('phone', '==', phone))
+  const cleanPhone = (phone || '').trim()
+  const q = query(collection(db, 'users'), where('phone', '==', cleanPhone))
   const snap = await getDocs(q)
-  if (snap.empty) throw new Error('No account found with this phone number')
+  if (snap.empty) {
+    const allUsersSnap = await getDocs(collection(db, 'users'))
+    const allPhones = allUsersSnap.docs.map(d => `'${d.data().phone}'(${d.data().role})`).join(', ')
+    throw new Error(`Account '${cleanPhone}' missing. DB has: ${allPhones}`)
+  }
 
   const userDoc = snap.docs[0]
   const userData = userDoc.data()
@@ -37,6 +46,39 @@ export const loginWithPhone = async (phone, password) => {
   if (userData.password !== password) throw new Error('Incorrect password')
 
   return { id: userDoc.id, ...userData }
+}
+
+export const registerAdmin = async (name, phone, email, password, companyName, companyLocation) => {
+  const usersRef = collection(db, 'users')
+
+  // Check if a user with this phone number already exists
+  const phoneCheck = query(usersRef, where('phone', '==', phone.trim()))
+  const phoneSnap = await getDocs(phoneCheck)
+  if (!phoneSnap.empty) {
+    throw new Error('An account with this phone number already exists')
+  }
+
+  const docRef = await addDoc(usersRef, {
+    name: name.trim(),
+    phone: phone.trim(),
+    email: email ? email.trim() : null,
+    password: password,
+    role: 'admin',
+    companyName: companyName.trim(),
+    companyLocation: companyLocation.trim(),
+    createdAt: serverTimestamp()
+  })
+
+  return {
+    id: docRef.id,
+    name: name.trim(),
+    phone: phone.trim(),
+    email: email ? email.trim() : null,
+    password: password,
+    role: 'admin',
+    companyName: companyName.trim(),
+    companyLocation: companyLocation.trim(),
+  }
 }
 
 export const getUserById = async (id) => {

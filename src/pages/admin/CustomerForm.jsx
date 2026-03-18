@@ -95,7 +95,7 @@ const CustomerForm = ({ initial, onSave, onClose }) => {
           </div>
           <div>
             <label className="form-label">Phone Number *</label>
-            <input className="form-input" type="tel" value={form.phone} onChange={e => set('phone', e.target.value)} placeholder="10-digit mobile number" maxLength={10} required />
+            <input className="form-input" type="tel" value={form.phone} onChange={e => set('phone', e.target.value.replace(/\D/g, ''))} minLength={10} maxLength={10} pattern="[0-9]{10}" placeholder="10-digit mobile number" required />
           </div>
           {/* Password — only for new customers */}
           {!initial && (

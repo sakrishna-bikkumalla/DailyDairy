@@ -1,83 +1,70 @@
-import React, { useEffect, useState } from 'react'
-import { MdAdd, MdEdit, MdDelete, MdSearch, MdLocationOn, MdPhone } from 'react-icons/md'
-import { GiMilkCarton } from 'react-icons/gi'
-import { getCustomers, createCustomerWithAccount, updateCustomer, deleteCustomer } from '../../services/customerService'
-import { formatMl } from '../../utils/mlUtils'
-import toast from 'react-hot-toast'
-import CustomerForm from './CustomerForm'
+import React, { useEffect, useState } from 'react';
+import { MdAdd, MdEdit, MdDelete, MdSearch, MdLocationOn } from 'react-icons/md';
+import { GiMilkCarton } from 'react-icons/gi';
+
+import PageHeader from '../../components/common/PageHeader';
+import LoadingSpinner from '../../components/common/LoadingSpinner';
+import CustomerForm from './CustomerForm';
+
+import { useCustomers } from '../../hooks/useCustomers';
+import { updateCustomer } from '../../services/customerService';
+import toast from 'react-hot-toast';
 
 const Customers = () => {
-  const [customers, setCustomers] = useState([])
-  const [filtered, setFiltered] = useState([])
-  const [search, setSearch] = useState('')
-  const [loading, setLoading] = useState(true)
-  const [showForm, setShowForm] = useState(false)
-  const [editTarget, setEditTarget] = useState(null)
-
-  const load = async () => {
-    setLoading(true)
-    try {
-      const data = await getCustomers()
-      setCustomers(data)
-      setFiltered(data)
-    } catch (e) {
-      toast.error('Failed to load customers')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => { load() }, [])
+  const { customers, loading, loadCustomers, handleAddCustomer, handleDeleteCustomer } = useCustomers();
+  
+  const [filtered, setFiltered] = useState([]);
+  const [search, setSearch] = useState('');
+  const [showForm, setShowForm] = useState(false);
+  const [editTarget, setEditTarget] = useState(null);
 
   useEffect(() => {
-    const q = search.toLowerCase()
+    const q = search.toLowerCase();
     setFiltered(customers.filter(c =>
-      c.name?.toLowerCase().includes(q) || c.phone?.includes(q) || c.address?.toLowerCase().includes(q)
-    ))
-  }, [search, customers])
+      c.name?.toLowerCase().includes(q) || 
+      c.phone?.includes(q) || 
+      c.address?.toLowerCase().includes(q)
+    ));
+  }, [search, customers]);
 
-  const handleEdit = (c) => { setEditTarget(c); setShowForm(true) }
-  const handleAdd = () => { setEditTarget(null); setShowForm(true) }
+  const handleEdit = (c) => { setEditTarget(c); setShowForm(true); };
+  const handleAddBtn = () => { setEditTarget(null); setShowForm(true); };
 
-  const handleDelete = async (id, name) => {
-    if (!confirm(`Delete customer "${name}"? This cannot be undone.`)) return
-    try {
-      await deleteCustomer(id)
-      toast.success('Customer deleted')
-      load()
-    } catch { toast.error('Failed to delete') }
-  }
+  const onDelete = async (id, name) => {
+    if (!window.confirm(`Delete customer "${name}"? This cannot be undone.`)) return;
+    await handleDeleteCustomer(id);
+  };
 
-  const handleSave = async (data) => {
+  const onSave = async (data) => {
     try {
       if (editTarget) {
-        await updateCustomer(editTarget.id, data)
-        toast.success('Customer updated successfully')
+        await updateCustomer(editTarget.id, data);
+        toast.success('Customer updated successfully');
+        loadCustomers();
       } else {
-        const { defaultPassword } = await createCustomerWithAccount(data)
+        const { defaultPassword } = await handleAddCustomer(data);
         toast.success(
           `✅ Customer added!\nLogin: ${data.phone} / ${defaultPassword}`,
           { duration: 8000 }
-        )
+        );
       }
-      setShowForm(false)
-      load()
+      setShowForm(false);
     } catch (e) {
-      toast.error(e.message || 'Failed to save')
+      toast.error(e.message || 'Failed to save');
     }
-  }
+  };
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="page-header">Customers</h1>
-          <p className="page-subtitle">{customers.length} registered customers</p>
-        </div>
-        <button onClick={handleAdd} className="btn-primary">
-          <MdAdd className="text-lg" /> Add Customer
-        </button>
-      </div>
+      <PageHeader 
+        title="Customers"
+        subtitle={`${customers.length} registered customers`}
+        rightContent={
+          <button onClick={handleAddBtn} className="btn-primary">
+            <MdAdd className="text-lg" /> Add Customer
+          </button>
+        }
+      />
 
       {/* Search */}
       <div className="relative mb-4">
@@ -92,14 +79,14 @@ const Customers = () => {
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center h-40"><div className="w-8 h-8 border-2 border-dairy-green-500 border-t-transparent rounded-full animate-spin" /></div>
+        <LoadingSpinner />
       ) : (
         <div className="card p-0 overflow-hidden">
           {filtered.length === 0 ? (
             <div className="text-center py-16 text-slate-500">
               <GiMilkCarton className="text-5xl mx-auto mb-3 opacity-30" />
               <p>No customers found</p>
-              <button onClick={handleAdd} className="mt-4 btn-primary mx-auto">Add First Customer</button>
+              <button onClick={handleAddBtn} className="mt-4 btn-primary mx-auto">Add First Customer</button>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -138,7 +125,7 @@ const Customers = () => {
                           <button onClick={() => handleEdit(c)} className="p-2 rounded-lg text-slate-400 hover:bg-blue-900/30 hover:text-blue-400 transition-colors">
                             <MdEdit />
                           </button>
-                          <button onClick={() => handleDelete(c.id, c.name)} className="p-2 rounded-lg text-slate-400 hover:bg-red-900/30 hover:text-red-400 transition-colors">
+                          <button onClick={() => onDelete(c.id, c.name)} className="p-2 rounded-lg text-slate-400 hover:bg-red-900/30 hover:text-red-400 transition-colors">
                             <MdDelete />
                           </button>
                         </div>
@@ -155,12 +142,12 @@ const Customers = () => {
       {showForm && (
         <CustomerForm
           initial={editTarget}
-          onSave={handleSave}
+          onSave={onSave}
           onClose={() => setShowForm(false)}
         />
       )}
     </div>
-  )
-}
+  );
+};
 
-export default Customers
+export default Customers;

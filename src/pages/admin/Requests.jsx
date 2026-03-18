@@ -4,6 +4,7 @@ import { getRequests, updateRequestStatus } from '../../services/requestService'
 import { createDeliveryForRequest } from '../../services/deliveryService'
 import { formatDate, formatDateTime } from '../../utils/dateUtils'
 import { formatMl } from '../../utils/mlUtils'
+import { useAuth } from '../../contexts/AuthContext'
 import toast from 'react-hot-toast'
 
 const reqTypeInfo = {
@@ -17,6 +18,7 @@ const reqTypeInfo = {
 const TABS = ['all', 'pending', 'approved', 'rejected']
 
 const Requests = () => {
+  const { adminId } = useAuth()
   const [requests, setRequests] = useState([])
   const [tab, setTab] = useState('pending')
   const [loading, setLoading] = useState(true)
@@ -25,12 +27,12 @@ const Requests = () => {
 
   const load = async () => {
     setLoading(true)
-    try { setRequests(await getRequests()) }
+    try { setRequests(await getRequests(null, adminId)) }
     catch { toast.error('Failed to load requests') }
     finally { setLoading(false) }
   }
 
-  useEffect(() => { load() }, [])
+  useEffect(() => { if (adminId) load() }, [adminId])
 
   const handle = async (id, status, reason = null) => {
     try {

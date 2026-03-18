@@ -30,6 +30,11 @@ export const AuthProvider = ({ children }) => {
     setUser(userData)
   }
 
+  const signup = (userData) => {
+    localStorage.setItem('dairy_user', JSON.stringify(userData))
+    setUser(userData)
+  }
+
   const logout = () => {
     localStorage.removeItem('dairy_user')
     setUser(null)
@@ -47,8 +52,12 @@ export const AuthProvider = ({ children }) => {
   const isCustomer = user?.role === 'customer'
   const isAgent = user?.role === 'agent'
 
+  // Multi-tenancy: admin's own doc ID is their adminId.
+  // Customers/agents inherit adminId from the admin who created them.
+  const adminId = isAdmin ? user?.id : user?.adminId || null
+
   return (
-    <AuthContext.Provider value={{ user, login, logout, updateUser, isAdmin, isCustomer, isAgent, loading }}>
+    <AuthContext.Provider value={{ user, login, signup, logout, updateUser, isAdmin, isCustomer, isAgent, adminId, loading }}>
       {children}
     </AuthContext.Provider>
   )

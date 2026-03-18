@@ -1,83 +1,57 @@
-import React, { useEffect, useState } from 'react'
-import { MdRefresh, MdCheckCircle, MdPending, MdLocalShipping, MdPersonAdd } from 'react-icons/md'
-import {
-  createDailyDeliveries, getDeliveriesByDate, getDeliveryStats, assignAgent
-} from '../../services/deliveryService'
-import { getAgents } from '../../services/agentService'
-import { getTodayString, formatDate } from '../../utils/dateUtils'
-import { formatMl } from '../../utils/mlUtils'
-import DeliveryProgressBar from '../../components/DeliveryProgressBar'
-import toast from 'react-hot-toast'
+import React, { useState } from 'react';
+import { MdRefresh } from 'react-icons/md';
+
+import PageHeader from '../../components/common/PageHeader';
+import LoadingSpinner from '../../components/common/LoadingSpinner';
+import DeliveryProgressBar from '../../components/DeliveryProgressBar';
+
+import { useDeliveries } from '../../hooks/useDeliveries';
+import { useAgents } from '../../hooks/useAgents';
+
+import { getTodayString, formatDate } from '../../utils/dateUtils';
+import { formatMl } from '../../utils/mlUtils';
+import { DELIVERY_STATUS, ROLES } from '../../constants';
 
 const statusBadge = {
-  pending: <span className="badge-amber">Pending</span>,
-  delivered: <span className="badge-green">Delivered</span>,
-  skipped: <span className="badge-red">Skipped</span>,
-}
+  [DELIVERY_STATUS.PENDING]: <span className="badge-amber">Pending</span>,
+  [DELIVERY_STATUS.DELIVERED]: <span className="badge-green">Delivered</span>,
+  [DELIVERY_STATUS.SKIPPED]: <span className="badge-red">Skipped</span>,
+};
 
 const DailyDeliveries = () => {
-  const [date, setDate] = useState(getTodayString())
-  const [deliveries, setDeliveries] = useState([])
-  const [agents, setAgents] = useState([])
-  const [stats, setStats] = useState({ total: 0, completed: 0, pending: 0 })
-  const [loading, setLoading] = useState(true)
-  const [generating, setGenerating] = useState(false)
-
-  const loadAgents = async () => { setAgents(await getAgents()) }
-
-  const load = async () => {
-    setLoading(true)
-    try {
-      const [delivs, s] = await Promise.all([getDeliveriesByDate(date), getDeliveryStats(date)])
-      setDeliveries(delivs)
-      setStats(s)
-    } catch (e) {
-      toast.error('Failed to load deliveries')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => { loadAgents(); load() }, [date])
-
-  const handleGenerate = async () => {
-    setGenerating(true)
-    try {
-      const result = await createDailyDeliveries(date)
-      if (result.created > 0) {
-        toast.success(`Generated ${result.created} new deliveries`)
-        load()
-      } else {
-        toast.success('All deliveries are already up to date')
-      }
-    } catch (e) {
-      toast.error(e.message || 'Failed to generate')
-    } finally {
-      setGenerating(false)
-    }
-  }
-
-  const handleAssignAgent = async (deliveryId, agentId) => {
-    try {
-      await assignAgent(deliveryId, agentId)
-      toast.success('Agent assigned')
-      load()
-    } catch { toast.error('Failed to assign') }
-  }
+  const [date, setDate] = useState(getTodayString());
+  
+  // Custom hooks
+  const { agents } = useAgents();
+  const {
+    deliveries,
+    stats,
+    loading,
+    generating,
+    generateDeliveries,
+    handleAssignAgent,
+    refreshUser // Reusing loadData as refresh
+  } = useDeliveries(date);
 
   return (
     <div>
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
-        <div>
-          <h1 className="page-header">Daily Deliveries</h1>
-          <p className="page-subtitle">Generate and manage milk deliveries by date</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <input type="date" value={date} onChange={e => setDate(e.target.value)}
-            className="form-input w-auto" />
-          <button onClick={load} className="btn-secondary p-3"><MdRefresh /></button>
-        </div>
-      </div>
+      <PageHeader
+        title="Daily Deliveries"
+        subtitle="Generate and manage milk deliveries by date"
+        rightContent={
+          <>
+            <input 
+              type="date" 
+              value={date} 
+              onChange={e => setDate(e.target.value)}
+              className="form-input w-auto" 
+            />
+            <button onClick={refreshUser} className="btn-secondary p-3">
+              <MdRefresh />
+            </button>
+          </>
+        }
+      />
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-4 mb-6">
@@ -102,10 +76,10 @@ const DailyDeliveries = () => {
         </DeliveryProgressBar>
       )}
 
-      {/* Generate/Sync button */}
+      {/* Generate button */}
       <div className="mb-6 flex justify-end">
         <button 
-          onClick={handleGenerate} 
+          onClick={generateDeliveries} 
           disabled={generating} 
           className="btn-primary"
         >
@@ -115,7 +89,7 @@ const DailyDeliveries = () => {
 
       {/* Delivery list */}
       {loading ? (
-        <div className="flex items-center justify-center h-40"><div className="w-8 h-8 border-2 border-dairy-green-500 border-t-transparent rounded-full animate-spin" /></div>
+        <LoadingSpinner />
       ) : deliveries.length > 0 && (
         <div className="card p-0 overflow-hidden">
           <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700/50">
@@ -168,7 +142,7 @@ const DailyDeliveries = () => {
         </div>
       )}
     </div>
-  )
-}
+  );
+};
 
-export default DailyDeliveries
+export default DailyDeliveries;

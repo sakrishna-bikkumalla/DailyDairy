@@ -16,7 +16,7 @@ const REQUEST_TYPES = [
 
 const SubmitRequest = () => {
   const [params] = useSearchParams()
-  const { user } = useAuth()
+  const { user, adminId } = useAuth()
   const [type, setType] = useState(params.get('type') || 'extra_milk')
   const [milkMl, setMilkMl] = useState(500)
   const [date, setDate] = useState(getTodayString())
@@ -34,11 +34,11 @@ const SubmitRequest = () => {
     try {
       let data = {}
       if (type === 'pause_delivery') {
-        data = { startDate, endDate, reason }
+        data = { startDate, endDate, reason, adminId }
       } else if (type === 'custom') {
-        data = { milkMl: Number(milkMl), date, time, milkType, reason }
+        data = { milkMl: Number(milkMl), date, time, milkType, reason, adminId }
       } else {
-        data = { milkMl: Number(milkMl), date }
+        data = { milkMl: Number(milkMl), date, adminId }
       }
 
       await submitRequest(user.linkedId, user.name, type, data)
