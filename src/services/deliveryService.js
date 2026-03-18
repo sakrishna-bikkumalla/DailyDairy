@@ -147,6 +147,17 @@ export const getDeliveriesByCustomer = async (customerId) => {
   return results
 }
 
+export const getAllDeliveriesByAgent = async (agentId) => {
+  const q = query(
+    collection(db, COLLECTION),
+    where('agentId', '==', agentId)
+  )
+  const snap = await getDocs(q)
+  let results = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+  results.sort((a, b) => b.date.localeCompare(a.date))
+  return results
+}
+
 export const uploadDeliveryPhoto = async (file) => {
   if (!file) return null;
   

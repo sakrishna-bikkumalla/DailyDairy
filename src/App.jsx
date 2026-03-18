@@ -17,6 +17,7 @@ import RequestHistory from './pages/customer/RequestHistory'
 import DeliveryHistory from './pages/customer/DeliveryHistory'
 import AgentDashboard from './pages/agent/AgentDashboard'
 import DeliveryList from './pages/agent/DeliveryList'
+import AgentDeliveryHistory from './pages/agent/DeliveryHistory'
 import Layout from './components/Layout'
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -86,6 +87,7 @@ function App() {
           }>
             <Route path="dashboard" element={<AgentDashboard />} />
             <Route path="deliveries" element={<DeliveryList />} />
+            <Route path="history" element={<AgentDeliveryHistory />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />

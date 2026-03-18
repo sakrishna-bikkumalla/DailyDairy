@@ -27,6 +27,7 @@ const customerLinks = [
 const agentLinks = [
   { to: '/agent/dashboard', icon: MdDashboard, label: 'Dashboard' },
   { to: '/agent/deliveries', icon: MdLocalShipping, label: 'My Deliveries' },
+  { to: '/agent/history', icon: MdHistory, label: 'Delivery History' },
 ]
 
 const linksByRole = { admin: adminLinks, customer: customerLinks, agent: agentLinks }
