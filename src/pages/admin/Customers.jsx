@@ -67,11 +67,11 @@ const Customers = () => {
       />
 
       {/* Search */}
-      <div className="relative mb-4">
+      <div className="relative mb-6">
         <MdSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
         <input
           type="text"
-          className="form-input pl-11"
+          className="form-input pl-11 w-full"
           placeholder="Search by name, phone, address..."
           value={search}
           onChange={e => setSearch(e.target.value)}
@@ -81,60 +81,52 @@ const Customers = () => {
       {loading ? (
         <LoadingSpinner />
       ) : (
-        <div className="card p-0 overflow-hidden">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.length === 0 ? (
-            <div className="text-center py-16 text-slate-500">
+            <div className="col-span-full card text-center py-16 text-slate-500">
               <GiMilkCarton className="text-5xl mx-auto mb-3 opacity-30" />
               <p>No customers found</p>
               <button onClick={handleAddBtn} className="mt-4 btn-primary mx-auto">Add First Customer</button>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-slate-700 bg-slate-700/30 text-xs text-slate-400 uppercase tracking-wide">
-                    <th className="text-left px-4 py-3">Name</th>
-                    <th className="text-left px-4 py-3">Phone</th>
-                    <th className="text-left px-4 py-3">Location</th>
-                    <th className="text-right px-4 py-3">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.map(c => (
-                    <tr key={c.id} className="table-row">
-                      <td className="px-4 py-3">
-                        <p className="font-medium text-white">{c.name}</p>
-                        <p className="text-xs text-slate-500 truncate max-w-[180px]">{c.address}</p>
-                      </td>
-                      <td className="px-4 py-3 text-slate-300 text-sm">{c.phone}</td>
-                      <td className="px-4 py-3">
-                        {c.locationUrl ? (
-                          <a href={c.locationUrl} target="_blank" rel="noreferrer"
-                            className="flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300">
-                            <MdLocationOn />Open URL
-                          </a>
-                        ) : c.latitude && c.longitude ? (
-                          <a href={`https://maps.google.com/?q=${c.latitude},${c.longitude}`} target="_blank" rel="noreferrer"
-                            className="flex items-center gap-1 text-xs text-dairy-green-400 hover:text-dairy-green-300">
-                            <MdLocationOn />View Map
-                          </a>
-                        ) : <span className="text-slate-600 text-xs">No GPS</span>}
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2 justify-end">
-                          <button onClick={() => handleEdit(c)} className="p-2 rounded-lg text-slate-400 hover:bg-blue-900/30 hover:text-blue-400 transition-colors">
-                            <MdEdit />
-                          </button>
-                          <button onClick={() => onDelete(c.id, c.name)} className="p-2 rounded-lg text-slate-400 hover:bg-red-900/30 hover:text-red-400 transition-colors">
-                            <MdDelete />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            filtered.map(c => (
+              <div key={c.id} className="card flex flex-col gap-4">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="w-12 h-12 bg-dairy-green-900/50 rounded-xl flex items-center justify-center text-dairy-green-400 text-2xl font-bold flex-shrink-0">
+                    {c.name ? c.name[0].toUpperCase() : '?'}
+                  </div>
+                  <div className="flex gap-1 flex-shrink-0">
+                    <button onClick={() => handleEdit(c)} className="p-2 rounded-lg text-slate-400 hover:bg-blue-900/30 hover:text-blue-400 transition-colors bg-slate-900/50">
+                      <MdEdit />
+                    </button>
+                    <button onClick={() => onDelete(c.id, c.name)} className="p-2 rounded-lg text-slate-400 hover:bg-red-900/30 hover:text-red-400 transition-colors bg-slate-900/50">
+                      <MdDelete />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-white text-lg truncate">{c.name}</p>
+                  <p className="text-sm text-slate-400 mb-1">{c.phone}</p>
+                  <p className="text-xs text-slate-500 line-clamp-2" title={c.address}>{c.address || 'No address provided'}</p>
+                </div>
+
+                <div className="pt-3 border-t border-slate-700/50 flex items-center justify-between">
+                  <span className="text-xs font-semibold uppercase text-slate-500 tracking-wider">Location</span>
+                  {c.locationUrl ? (
+                    <a href={c.locationUrl} target="_blank" rel="noreferrer"
+                      className="flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300 font-medium">
+                      <MdLocationOn />Open URL
+                    </a>
+                  ) : c.latitude && c.longitude ? (
+                    <a href={`https://maps.google.com/?q=${c.latitude},${c.longitude}`} target="_blank" rel="noreferrer"
+                      className="flex items-center gap-1 text-xs text-dairy-green-400 hover:text-dairy-green-300 font-medium">
+                      <MdLocationOn />View Map
+                    </a>
+                  ) : <span className="text-slate-600 text-xs text-right">No GPS</span>}
+                </div>
+              </div>
+            ))
           )}
         </div>
       )}

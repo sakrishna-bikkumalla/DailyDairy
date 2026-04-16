@@ -78,8 +78,8 @@ const AgentDeliveryHistory = () => {
   ]
 
   const filters = [
-    { type: 'date', value: fromDate, onChange: setFromDate, title: 'From Date' },
-    { type: 'date', value: toDate, onChange: setToDate, title: 'To Date', separator: 'to' },
+    { type: 'date', value: fromDate, onChange: setFromDate, title: 'From Date', separator: 'to' },
+    { type: 'date', value: toDate, onChange: setToDate, title: 'To Date' },
     { 
       type: 'select', 
       value: selectedCustomerId, 

@@ -22,11 +22,11 @@ const DeliveryHistoryView = ({
       </div>
 
       {stats && (
-        <div className="grid grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
           {stats.map((stat, idx) => (
-            <div key={idx} className="card p-4 text-center">
-              <p className={`text-2xl font-bold ${stat.color || 'text-white'}`}>{stat.value}</p>
-              <p className="text-xs text-slate-400 mt-1">{stat.label}</p>
+            <div key={idx} className={`card p-3 md:p-4 text-center ${idx === 2 ? 'col-span-2 md:col-span-1' : ''}`}>
+              <p className={`text-xl md:text-2xl font-bold ${stat.color || 'text-white'}`}>{stat.value}</p>
+              <p className="text-[10px] md:text-xs text-slate-400 mt-1">{stat.label}</p>
             </div>
           ))}
         </div>
@@ -45,7 +45,8 @@ const DeliveryHistoryView = ({
         </div>
       ) : (
         <div className="card p-0 overflow-hidden">
-          <div className="overflow-x-auto">
+          {/* Desktop Table View */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-slate-700/50 bg-slate-800/30 text-xs text-slate-400 uppercase">
@@ -56,9 +57,9 @@ const DeliveryHistoryView = ({
               </thead>
               <tbody>
                 {deliveries.map(d => (
-                  <tr key={d.id} className="table-row">
+                  <tr key={d.id} className="table-row border-b border-slate-700/30 last:border-0 hover:bg-slate-800/20 transition-colors">
                     {columns.map((col, idx) => (
-                      <td key={idx} className={`px-4 py-3 ${col.cellClassName || ''}`}>
+                      <td key={idx} className={`px-4 py-4 ${col.cellClassName || ''}`}>
                         {col.render ? col.render(d) : d[col.key]}
                       </td>
                     ))}
@@ -66,6 +67,22 @@ const DeliveryHistoryView = ({
                 ))}
               </tbody>
             </table>
+          </div>
+          
+          {/* Mobile Card View */}
+          <div className="md:hidden divide-y divide-slate-700/50">
+            {deliveries.map((d) => (
+              <div key={d.id} className="p-4 flex flex-col gap-3">
+                {columns.map((col, idx) => (
+                  <div key={idx} className="flex justify-between items-center text-sm">
+                    <span className="text-slate-500 text-[11px] font-bold uppercase tracking-wider">{col.header}</span>
+                    <div className="text-right font-medium">
+                      {col.render ? col.render(d) : d[col.key]}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ))}
           </div>
         </div>
       )}

@@ -22,6 +22,7 @@ const Requests = () => {
   const [requests, setRequests] = useState([])
   const [tab, setTab] = useState('pending')
   const [loading, setLoading] = useState(true)
+  const [updatingId, setUpdatingId] = useState(null)
   const [rejectingId, setRejectingId] = useState(null)
   const [rejectReason, setRejectReason] = useState('')
 
@@ -35,6 +36,7 @@ const Requests = () => {
   useEffect(() => { if (adminId) load() }, [adminId])
 
   const handle = async (id, status, reason = null) => {
+    setUpdatingId(id)
     try {
       await updateRequestStatus(id, status, reason)
       
@@ -50,7 +52,11 @@ const Requests = () => {
       toast.success(`Request ${status}`)
       if (status === 'rejected') setRejectingId(null)
       load()
-    } catch { toast.error('Failed to update') }
+    } catch { 
+      toast.error('Failed to update') 
+    } finally {
+      setUpdatingId(null)
+    }
   }
 
   const filtered = tab === 'all' ? requests : requests.filter(r => r.status === tab)
@@ -88,6 +94,7 @@ const Requests = () => {
       ) : (
         <div className="space-y-3">
           {filtered.map(r => {
+            const isUpdating = updatingId === r.id
             const ti = reqTypeInfo[r.requestType] || { label: r.requestType, color: 'badge-blue' }
             return (
               <div key={r.id} className="card">
@@ -95,7 +102,7 @@ const Requests = () => {
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2 flex-wrap">
                       <span className={ti.color}>{ti.label}</span>
-                      <span className={`badge ${r.status === 'pending' ? 'badge-amber' : r.status === 'approved' ? 'badge-green' : 'badge-red'}`}>
+                      <span className={`badge ${r.status === 'pending' ? 'badge-amber' : r.status === 'approved' ? 'badge-green' : r.status === 'rejected' ? 'badge-red' : 'badge-blue'}`}>
                         {r.status}
                       </span>
                     </div>
@@ -124,6 +131,7 @@ const Requests = () => {
                             className="form-input text-sm py-1.5 px-2 bg-slate-900 min-w-[160px]"
                             value={rejectReason}
                             onChange={e => setRejectReason(e.target.value)}
+                            disabled={isUpdating}
                           >
                             <option value="">Select Reason...</option>
                             <option value="No Stock">No Stock</option>
@@ -131,22 +139,23 @@ const Requests = () => {
                             <option value="Other">Other</option>
                           </select>
                           <div className="flex gap-2 justify-end">
-                            <button onClick={() => setRejectingId(null)} className="btn-secondary py-1 px-3 text-xs">Cancel</button>
+                            <button onClick={() => setRejectingId(null)} disabled={isUpdating} className="btn-secondary py-1 px-3 text-xs">Cancel</button>
                             <button 
                               onClick={() => handle(r.id, 'rejected', rejectReason)} 
-                              disabled={!rejectReason}
-                              className="btn-danger py-1 px-3 text-xs disabled:opacity-50"
+                              disabled={!rejectReason || isUpdating}
+                              className="btn-danger py-1 px-3 text-xs disabled:opacity-50 flex items-center gap-1"
                             >
-                              Confirm Reject
+                              {isUpdating ? <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" /> : 'Confirm Reject'}
                             </button>
                           </div>
                         </div>
                       ) : (
                         <div className="flex gap-2 h-full">
-                          <button onClick={() => handle(r.id, 'approved')} className="btn-primary py-2 px-3 text-sm h-10">
-                            <MdCheckCircle /> Approve
+                          <button onClick={() => handle(r.id, 'approved')} disabled={isUpdating} className="btn-primary py-2 px-3 text-sm h-10 flex items-center gap-2">
+                            {isUpdating ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <MdCheckCircle />}
+                            {isUpdating ? 'Approving...' : 'Approve'}
                           </button>
-                          <button onClick={() => { setRejectingId(r.id); setRejectReason('') }} className="btn-danger py-2 px-3 text-sm h-10">
+                          <button onClick={() => { setRejectingId(r.id); setRejectReason('') }} disabled={isUpdating} className="btn-danger py-2 px-3 text-sm h-10 flex items-center gap-2">
                             <MdCancel /> Reject
                           </button>
                         </div>

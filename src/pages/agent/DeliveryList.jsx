@@ -207,70 +207,69 @@ const DeliveryList = () => {
                 </div>
 
                 {d.status === 'pending' && (
-                  <div className="flex items-center gap-2 flex-shrink-0 flex-wrap">
+                  <div className="flex flex-col gap-2 w-full sm:w-auto sm:shrink-0">
+                    <div className="grid grid-cols-2 gap-2 w-full">
+                      {/* Navigation Button */}
+                      <a
+                        href={
+                          d.locationUrl 
+                            ? d.locationUrl
+                            : d.latitude && d.longitude
+                              ? `https://www.google.com/maps/dir/?api=1&destination=${d.latitude},${d.longitude}`
+                              : `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(d.customerAddress)}`
+                        }
+                        target="_blank"
+                        rel="noreferrer"
+                        className="btn-secondary py-2.5 px-3 text-xs bg-blue-600/10 text-blue-400 border-blue-500/20 hover:bg-blue-600/20 hover:text-white flex items-center justify-center gap-1"
+                      >
+                        <MdMap className="text-sm" /> Go
+                      </a>
+
+                      <select
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (val) handleIssueAction(d, val);
+                          e.target.value = ""; // reset
+                        }}
+                        disabled={markingId === d.id}
+                        className="btn-secondary py-2.5 px-2 text-xs bg-slate-800/50 hover:bg-slate-800 border-slate-700 appearance-none text-center cursor-pointer w-full"
+                      >
+                        <option value="">Issue...</option>
+                        <option value="partial">Quantity Issue</option>
+                        <option disabled>──────</option>
+                        <option value="Customer Rejected">Rejected</option>
+                        <option value="Customer Unavailable">Unavailable</option>
+                        <option value="Skipped by Agent">Other Skip</option>
+                      </select>
+                    </div>
+
                     {issueState[d.id] === 'partial' && (
-                      <div className="flex items-center gap-2 mr-2">
-                        <label className="text-xs text-amber-500 whitespace-nowrap font-semibold">Partial (ml):</label>
+                      <div className="flex items-center justify-between gap-3 bg-amber-900/10 border border-amber-500/20 p-2 rounded-xl scale-in">
+                        <label className="text-[10px] text-amber-500 uppercase font-black tracking-widest ml-1">Actual ML:</label>
                         <input
                           type="number"
                           value={mlInputs[d.id] ?? d.milkScheduledMl}
                           onChange={e => setMlInputs(p => ({ ...p, [d.id]: e.target.value }))}
-                          className="w-20 bg-slate-700 border border-amber-500/50 text-white rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-amber-500"
+                          className="w-24 bg-slate-900 border border-amber-500/50 text-white rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-amber-500 font-bold"
                           min={0}
                           step={50}
                         />
                       </div>
                     )}
-                    
-                    {/* <div className="flex items-center gap-2">
-                      <input 
-                        type="file"
-                        accept="image/*"
-                        capture="environment"
-                        onChange={e => setPhotoInputs(p => ({ ...p, [d.id]: e.target.files[0] }))}
-                        className="text-xs text-slate-400 file:mr-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-xs file:bg-slate-700 file:text-slate-300 hover:file:bg-slate-600 cursor-pointer w-36"
-                      />
-                    </div> */}
-                    
-                    {/* Navigation Button */}
-                    <a
-                      href={
-                        d.locationUrl 
-                          ? d.locationUrl
-                          : d.latitude && d.longitude
-                            ? `https://www.google.com/maps/dir/?api=1&destination=${d.latitude},${d.longitude}`
-                            : `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(d.customerAddress)}`
-                      }
-                      target="_blank"
-                      rel="noreferrer"
-                      className="btn-secondary py-2 px-3 text-sm text-xs bg-blue-600/20 text-blue-400 border-blue-500/30 hover:bg-blue-600/40 hover:text-white"
-                    >
-                      <MdMap className="inline mr-1 mb-0.5" /> Go
-                    </a>
-
-                    <select
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        if (val) handleIssueAction(d, val);
-                        e.target.value = ""; // reset
-                      }}
-                      disabled={markingId === d.id}
-                      className="btn-secondary py-2 px-2 text-sm text-xs bg-slate-700 hover:bg-slate-600 border-slate-600 appearance-none text-center cursor-pointer"
-                    >
-                      <option value="">Issue...</option>
-                      <option value="partial">1. Partial Quantity</option>
-                      <option disabled>──────</option>
-                      <option value="Customer Rejected">2. Customer Rejected</option>
-                      <option value="Customer Unavailable">3. Customer Unavailable</option>
-                      <option value="Skipped by Agent">4. Other Skip</option>
-                    </select>
 
                     <button
                       onClick={() => handleMarkDelivered(d)}
                       disabled={markingId === d.id}
-                      className="btn-primary py-2 px-3 text-sm"
+                      className="btn-primary py-3 px-4 text-sm w-full flex items-center justify-center gap-2 shadow-lg shadow-dairy-green-900/20 active:scale-[0.98] transition-transform"
                     >
-                      {markingId === d.id ? '...' : <><MdCheckCircle /> Done</>}
+                      {markingId === d.id ? (
+                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <>
+                          <MdCheckCircle className="text-lg" />
+                          <span className="font-bold tracking-wide">MARK AS DONE</span>
+                        </>
+                      )}
                     </button>
                   </div>
                 )}

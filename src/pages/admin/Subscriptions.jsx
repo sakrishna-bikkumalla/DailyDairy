@@ -279,9 +279,9 @@ const Subscriptions = () => {
         </div>
 
         {/* RIGHT COLUMN: Customer Subscription Dashboard */}
-        <div>
+        <div className="min-w-0">
           {selectedCustomerId ? (
-            <div className="card sticky top-6 animate-fade-in flex flex-col min-h-[600px]">
+            <div className="card sticky top-6 animate-fade-in flex flex-col min-h-[500px] sm:min-h-[600px] p-4 sm:p-6">
               {loadingDetails ? (
                 <div className="flex-1 flex flex-col items-center justify-center space-y-4">
                   <div className="w-8 h-8 border-2 border-dairy-green-500 border-t-transparent rounded-full animate-spin" />
@@ -301,12 +301,12 @@ const Subscriptions = () => {
                   </div>
 
                   {/* Tabs */}
-                  <div className="flex gap-4 mb-6 border-b border-slate-700">
+                  <div className="flex gap-4 mb-6 border-b border-slate-700 overflow-x-auto custom-scrollbar-hide whitespace-nowrap">
                     {['subscriptions', 'requests', 'billing', 'deleted'].map(tab => (
                       <button 
                         key={tab}
                         onClick={() => setActiveTab(tab)}
-                        className={`pb-3 px-1 text-sm font-medium border-b-2 transition-colors capitalize ${
+                        className={`pb-3 px-1 text-xs sm:text-sm font-medium border-b-2 transition-colors capitalize shrink-0 ${
                           activeTab === tab ? 'border-dairy-green-500 text-dairy-green-400' : 'border-transparent text-slate-400 hover:text-white'
                         }`}
                       >
@@ -332,7 +332,7 @@ const Subscriptions = () => {
                           <p className="text-slate-500 text-xs mt-1">Historically, deliveries were driven by baseline profile settings.</p>
                         </div>
                       ) : (
-                        <div className="grid grid-cols-[300px_1fr] gap-6 flex-1 items-start">
+                        <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6 flex-1 items-start">
                                                    {/* Plan List Sidebar */}
                           <div className="space-y-3 pr-2 overflow-y-auto max-h-[500px] custom-scrollbar">
                             {details.subscriptions
@@ -406,27 +406,27 @@ const Subscriptions = () => {
                             <div className="bg-slate-800/50 border border-slate-700 rounded-2xl p-5 shadow-inner min-h-[500px] flex flex-col">
                               <h3 className="text-lg font-bold text-white mb-4">Plan deep-dive</h3>
                               
-                              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-                                <div className="bg-slate-900 p-3 rounded-xl border border-slate-700/50 shrink-0">
-                                  <p className="text-[10px] text-slate-500 uppercase font-semibold mb-1">Timeline</p>
-                                  <p className="text-xl font-bold text-white">{selectedSub.metrics.daysCompleted} <span className="text-sm text-slate-400 font-normal">/ {selectedSub.metrics.totalDays}</span></p>
-                                  <p className="text-xs text-amber-500 mt-1">{selectedSub.metrics.daysLeft} days left</p>
+                              <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 mb-6">
+                                <div className="bg-slate-900 p-2.5 sm:p-3 rounded-xl border border-slate-700/50 shrink-0">
+                                  <p className="text-[9px] sm:text-[10px] text-slate-500 uppercase font-black tracking-wider mb-0.5 sm:mb-1">Timeline</p>
+                                  <p className="text-base sm:text-xl font-bold text-white">{selectedSub.metrics.daysCompleted} <span className="text-xs text-slate-400 font-normal">/ {selectedSub.metrics.totalDays}</span></p>
+                                  <p className="text-[10px] text-amber-500 mt-0.5 sm:mt-1 font-bold">{selectedSub.metrics.daysLeft} days left</p>
                                 </div>
-                                <div className="bg-slate-900 p-3 rounded-xl border border-slate-700/50 shrink-0">
-                                  <p className="text-[10px] text-slate-500 uppercase font-semibold mb-1">Deliveries</p>
-                                  <p className="text-xl font-bold text-white">{selectedSub.metrics.deliveriesCompleted}</p>
-                                  <p className="text-xs text-slate-400 mt-1">out of {selectedSub.metrics.deliveriesScheduled} logged events</p>
+                                <div className="bg-slate-900 p-2.5 sm:p-3 rounded-xl border border-slate-700/50 shrink-0">
+                                  <p className="text-[9px] sm:text-[10px] text-slate-500 uppercase font-black tracking-wider mb-0.5 sm:mb-1">Deliveries</p>
+                                  <p className="text-base sm:text-xl font-bold text-white">{selectedSub.metrics.deliveriesCompleted}</p>
+                                  <p className="text-[10px] text-slate-500 mt-0.5 sm:mt-1 font-medium italic">Events: {selectedSub.metrics.deliveriesScheduled}</p>
                                 </div>
-                                <div className="bg-slate-900 p-3 rounded-xl border border-blue-500/20 lg:col-span-2 shrink-0">
-                                  <p className="text-[10px] text-blue-400 uppercase font-semibold mb-1">Cost Tracking (₹{selectedSub.pricePerLiter || 60}/L)</p>
-                                  <div className="flex justify-between items-end mt-1">
+                                <div className="bg-slate-900 p-3 rounded-xl border border-blue-500/20 col-span-2 shrink-0">
+                                  <p className="text-[9px] sm:text-[10px] text-blue-400 uppercase font-black tracking-wider mb-0.5 sm:mb-1">Cost Tracking (₹{selectedSub.pricePerLiter || 60}/L)</p>
+                                  <div className="flex justify-between items-end mt-1 gap-2">
                                     <div>
-                                      <span className="text-xs text-slate-400 block">Actual Billed Cost</span>
-                                      <p className="text-2xl font-bold text-dairy-green-400">₹{selectedSub.metrics.actualCost.toFixed(2)}</p>
+                                      <span className="text-[10px] text-slate-400 block leading-tight">Actual Billed</span>
+                                      <p className="text-lg sm:text-2xl font-bold text-dairy-green-400">₹{selectedSub.metrics.actualCost.toFixed(2)}</p>
                                     </div>
                                     <div className="text-right">
-                                      <span className="text-xs text-slate-400 block">Estimated (100% Rate)</span>
-                                      <p className="text-md font-semibold text-slate-300">₹{selectedSub.metrics.estimatedCost.toFixed(2)}</p>
+                                      <span className="text-[10px] text-slate-400 block leading-tight">Estimated</span>
+                                      <p className="text-sm sm:text-md font-bold text-slate-500 italic line-through decoration-slate-600/50">₹{selectedSub.metrics.estimatedCost.toFixed(2)}</p>
                                     </div>
                                   </div>
                                 </div>
@@ -467,40 +467,65 @@ const Subscriptions = () => {
                                 </div>
                               </div>
 
-                              <div className="flex-1 overflow-y-auto bg-slate-900 rounded-xl border border-slate-700/50 custom-scrollbar">
+                              <div className="flex-1 overflow-y-auto bg-slate-900 rounded-xl border border-slate-700/50 custom-scrollbar overflow-x-hidden">
                                 {filteredHistory.length === 0 ? (
                                   <div className="p-6 text-center text-slate-500 text-sm">No delivery records matched the criteria.</div>
                                 ) : (
-                                  <table className="w-full text-sm">
-                                    <thead className="sticky top-0 bg-slate-800 text-slate-400 uppercase text-xs z-10">
-                                      <tr>
-                                        <th className="text-left font-medium p-3">Date</th>
-                                        <th className="text-left font-medium p-3">Status</th>
-                                        <th className="text-left font-medium p-3">Scheduled</th>
-                                        <th className="text-right font-medium p-3">Delivered</th>
-                                      </tr>
-                                    </thead>
-                                    <tbody>
-                                      {filteredHistory.map(d => (
-                                        <tr key={d.id} className="border-b border-slate-800/50 hover:bg-slate-800 transition-colors">
-                                          <td className="p-3 text-white">{formatDate(d.date)}</td>
-                                          <td className="p-3">
-                                            <span className={`badge ${d.status === 'delivered' ? 'badge-green' : d.status === 'pending' ? 'badge-amber' : 'badge-red'}`}>
-                                              {d.status}
-                                            </span>
-                                          </td>
-                                          <td className="p-3 text-slate-400">{formatMl(d.milkScheduledMl)}</td>
-                                          <td className="p-3 text-right">
-                                            {d.status === 'delivered' ? (
-                                              <span className="font-semibold text-dairy-green-400">{formatMl(d.milkDeliveredMl)}</span>
-                                            ) : (
-                                              <span className="text-slate-600">-</span>
-                                            )}
-                                          </td>
+                                  <>
+                                    {/* Desktop Table */}
+                                    <table className="w-full text-sm hidden lg:table">
+                                      <thead className="sticky top-0 bg-slate-800 text-slate-400 uppercase text-basis z-10">
+                                        <tr>
+                                          <th className="text-left font-medium p-3">Date</th>
+                                          <th className="text-left font-medium p-3">Status</th>
+                                          <th className="text-left font-medium p-3">Scheduled</th>
+                                          <th className="text-right font-medium p-3">Delivered</th>
                                         </tr>
+                                      </thead>
+                                      <tbody>
+                                        {filteredHistory.map(d => (
+                                          <tr key={d.id} className="border-b border-slate-800/50 hover:bg-slate-800 transition-colors">
+                                            <td className="p-3 text-white">{formatDate(d.date)}</td>
+                                            <td className="p-3">
+                                              <span className={`badge ${d.status === 'delivered' ? 'badge-green' : d.status === 'pending' ? 'badge-amber' : 'badge-red'}`}>
+                                                {d.status}
+                                              </span>
+                                            </td>
+                                            <td className="p-3 text-slate-400">{formatMl(d.milkScheduledMl)}</td>
+                                            <td className="p-3 text-right">
+                                              {d.status === 'delivered' ? (
+                                                <span className="font-semibold text-dairy-green-400">{formatMl(d.milkDeliveredMl)}</span>
+                                              ) : (
+                                                <span className="text-slate-600">-</span>
+                                              )}
+                                            </td>
+                                          </tr>
+                                        ))}
+                                      </tbody>
+                                    </table>
+
+                                    {/* Mobile Cards */}
+                                    <div className="lg:hidden divide-y divide-slate-800">
+                                      {filteredHistory.map(d => (
+                                        <div key={d.id} className="p-3 flex justify-between items-center bg-slate-900/40">
+                                          <div>
+                                            <p className="text-[11px] font-bold text-white tracking-widest">{formatDate(d.date).toUpperCase()}</p>
+                                            <p className="text-[10px] text-slate-500 mt-0.5">Sched: {formatMl(d.milkScheduledMl)}</p>
+                                          </div>
+                                          <div className="text-right">
+                                            <div className="flex justify-end mb-1">
+                                              <span className={`px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-widest ${d.status === 'delivered' ? 'bg-dairy-green-500/10 text-dairy-green-400' : 'bg-red-500/10 text-red-500'}`}>
+                                                {d.status}
+                                              </span>
+                                            </div>
+                                            {d.status === 'delivered' && (
+                                              <p className="text-xs font-black text-dairy-green-400">{formatMl(d.milkDeliveredMl)}</p>
+                                            )}
+                                          </div>
+                                        </div>
                                       ))}
-                                    </tbody>
-                                  </table>
+                                    </div>
+                                  </>
                                 )}
                               </div>
 
@@ -593,36 +618,36 @@ const Subscriptions = () => {
                             </button>
                           </div>
 
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                            <div className="space-y-2 bg-slate-800/50 p-4 rounded-xl border border-slate-700">
-                              <p className="text-xs text-slate-500 uppercase font-bold mb-2">Regular Deliveries</p>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4 sm:mb-6">
+                            <div className="space-y-2 bg-slate-800/50 p-3 sm:p-4 rounded-xl border border-slate-700">
+                              <p className="text-[10px] text-slate-500 uppercase font-black tracking-widest mb-2">Regular Deliveries</p>
                               <div className="flex justify-between py-1 border-b border-white/5">
-                                <span className="text-slate-400 text-sm">Count</span>
-                                <span className="text-white font-medium">{billingData.baseDeliveries.length} days</span>
+                                <span className="text-slate-400 text-xs sm:text-sm">Count</span>
+                                <span className="text-white font-medium text-xs sm:text-sm">{billingData.baseDeliveries.length} days</span>
                               </div>
                               <div className="flex justify-between py-1 border-b border-white/5">
-                                <span className="text-slate-400 text-sm">Volume</span>
-                                <span className="text-white font-medium">{billingData.summary.baseLiters.toFixed(2)}L</span>
+                                <span className="text-slate-400 text-xs sm:text-sm">Volume</span>
+                                <span className="text-white font-medium text-xs sm:text-sm">{billingData.summary.baseLiters.toFixed(2)}L</span>
                               </div>
                               <div className="flex justify-between py-1">
-                                <span className="text-slate-400 text-sm">Cost</span>
-                                <span className="text-white font-bold">₹{billingData.summary.baseCost.toFixed(2)}</span>
+                                <span className="text-slate-400 text-xs sm:text-sm">Cost</span>
+                                <span className="text-white font-bold text-sm sm:text-base">₹{billingData.summary.baseCost.toFixed(2)}</span>
                               </div>
                             </div>
 
-                            <div className="space-y-2 bg-blue-900/10 p-4 rounded-xl border border-blue-500/20">
-                              <p className="text-xs text-blue-400 uppercase font-bold mb-2">Extra Requests</p>
+                            <div className="space-y-2 bg-blue-900/10 p-3 sm:p-4 rounded-xl border border-blue-500/20">
+                              <p className="text-[10px] text-blue-400 uppercase font-black tracking-widest mb-2">Extra Requests</p>
                               <div className="flex justify-between py-1 border-b border-white/5">
-                                <span className="text-slate-400 text-sm">Count</span>
-                                <span className="text-white font-medium">{billingData.extraRequests.length} requests</span>
+                                <span className="text-slate-400 text-xs sm:text-sm">Count</span>
+                                <span className="text-white font-medium text-xs sm:text-sm">{billingData.extraRequests.length} docs</span>
                               </div>
                               <div className="flex justify-between py-1 border-b border-white/5">
-                                <span className="text-slate-400 text-sm">Volume</span>
-                                <span className="text-white font-medium">{billingData.summary.extraLiters.toFixed(2)}L</span>
+                                <span className="text-slate-400 text-xs sm:text-sm">Volume</span>
+                                <span className="text-white font-medium text-xs sm:text-sm">{billingData.summary.extraLiters.toFixed(2)}L</span>
                               </div>
                               <div className="flex justify-between py-1">
-                                <span className="text-slate-400 text-sm">Cost</span>
-                                <span className="text-blue-400 font-bold">₹{billingData.summary.extraCost.toFixed(2)}</span>
+                                <span className="text-slate-400 text-xs sm:text-sm">Cost</span>
+                                <span className="text-blue-400 font-bold text-sm sm:text-base">₹{billingData.summary.extraCost.toFixed(2)}</span>
                               </div>
                             </div>
                           </div>
@@ -632,10 +657,10 @@ const Subscriptions = () => {
                             <span className="text-3xl text-dairy-green-400">₹{billingData.summary.totalAmount.toFixed(2)}</span>
                           </div>
 
-                          {/* Combined Table */}
-                          <div className="flex-1 overflow-y-auto max-h-[300px] custom-scrollbar rounded-xl border border-slate-700/50 bg-slate-900">
-                            <table className="w-full text-sm">
-                              <thead className="sticky top-0 bg-slate-800 text-slate-400 uppercase text-xs">
+                          {/* Combined Table/Cards */}
+                          <div className="flex-1 overflow-y-auto max-h-[300px] custom-scrollbar rounded-xl border border-slate-700/50 bg-slate-900 overflow-x-hidden">
+                            <table className="w-full text-xs sm:text-sm hidden sm:table">
+                              <thead className="sticky top-0 bg-slate-800 text-slate-400 uppercase text-[10px] tracking-wider">
                                 <tr>
                                   <th className="text-left font-medium py-3 px-4">Date</th>
                                   <th className="text-left font-medium py-3 px-4">Type</th>
@@ -644,17 +669,16 @@ const Subscriptions = () => {
                                 </tr>
                               </thead>
                               <tbody>
-                                {/* Mix and Sort regular vs extra */}
                                 {[
                                   ...billingData.baseDeliveries.map(d => ({ ...d, billingType: 'Regular' })),
-                                  ...billingData.extraRequests.map(r => ({ ...r, date: r.date, milkDeliveredMl: r.milkMl, billingType: 'Extra Request' }))
+                                  ...billingData.extraRequests.map(r => ({ ...r, date: r.date, milkDeliveredMl: r.milkMl, billingType: 'Extra' }))
                                 ]
                                 .sort((a, b) => b.date.localeCompare(a.date))
                                 .map((item, idx) => (
                                   <tr key={idx} className="border-b border-slate-800/50">
                                     <td className="py-2.5 px-4 text-slate-300">{formatDate(item.date)}</td>
                                     <td className="py-2.5 px-4">
-                                      <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full ${item.billingType === 'Regular' ? 'bg-slate-800 text-slate-400' : 'bg-blue-900/30 text-blue-400'}`}>
+                                      <span className={`text-[9px] sm:text-[10px] uppercase font-bold px-2 py-0.5 rounded-full ${item.billingType === 'Regular' ? 'bg-slate-800 text-slate-400' : 'bg-blue-900/30 text-blue-400'}`}>
                                         {item.billingType}
                                       </span>
                                     </td>
@@ -666,6 +690,29 @@ const Subscriptions = () => {
                                 ))}
                               </tbody>
                             </table>
+
+                            {/* Mobile Listing */}
+                            <div className="sm:hidden divide-y divide-slate-800">
+                               {[
+                                  ...billingData.baseDeliveries.map(d => ({ ...d, billingType: 'Regular' })),
+                                  ...billingData.extraRequests.map(r => ({ ...r, date: r.date, milkDeliveredMl: r.milkMl, billingType: 'Extra' }))
+                                ]
+                                .sort((a, b) => b.date.localeCompare(a.date))
+                                .map((item, idx) => (
+                                  <div key={idx} className="p-3 flex justify-between items-center group active:bg-slate-800/50">
+                                    <div className="flex flex-col">
+                                      <span className="text-[10px] font-bold text-white tracking-widest">{formatDate(item.date).toUpperCase()}</span>
+                                      <span className={`w-fit text-[8px] uppercase font-black tracking-tighter mt-1 px-1 rounded ${item.billingType === 'Regular' ? 'text-slate-500' : 'text-blue-500 bg-blue-500/10'}`}>
+                                        {item.billingType}
+                                      </span>
+                                    </div>
+                                    <div className="text-right">
+                                      <div className="text-[10px] text-slate-400 mb-0.5">{formatMl(item.milkDeliveredMl)}</div>
+                                      <div className="text-sm font-black text-dairy-green-400">₹{(mlToLiters(item.milkDeliveredMl) * billingData.summary.pricePerLiter).toFixed(2)}</div>
+                                    </div>
+                                  </div>
+                                ))}
+                            </div>
                           </div>
                         </div>
                       )}

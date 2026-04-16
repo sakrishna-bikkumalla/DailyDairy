@@ -8,7 +8,7 @@ const PageHeader = ({ title, subtitle, rightContent }) => {
         {subtitle && <p className="page-subtitle">{subtitle}</p>}
       </div>
       {rightContent && (
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 self-end sm:self-auto shrink-0 mt-1 sm:mt-0">
           {rightContent}
         </div>
       )}
