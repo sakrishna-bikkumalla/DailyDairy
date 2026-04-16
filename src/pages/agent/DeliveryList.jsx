@@ -38,12 +38,20 @@ const DeliveryList = () => {
   const [mlInputs, setMlInputs] = useState({})
   const [photoInputs, setPhotoInputs] = useState({})
   const [issueState, setIssueState] = useState({}) // { deliveryId: 'reason' }
+  const [filter, setFilter] = useState('all')
   const today = getTodayString()
 
   const load = async () => {
     if (!user?.linkedId) { setLoading(false); return }
     setLoading(true)
-    try { setDeliveries(await getDeliveriesByAgent(user.linkedId, today)) }
+    try { 
+      const data = await getDeliveriesByAgent(user.linkedId, today)
+      setDeliveries(data)
+      // Auto-set filter to pending if there are pending items
+      if (data.some(d => d.status === 'pending')) {
+        setFilter('pending')
+      }
+    }
     catch { toast.error('Failed to load deliveries') }
     finally { setLoading(false) }
   }
@@ -102,6 +110,13 @@ const DeliveryList = () => {
   const done = deliveries.filter(d => d.status !== 'pending').length
   const pending = deliveries.filter(d => d.status === 'pending').length
 
+  const filtered = deliveries.filter(d => {
+    if (filter === 'all') return true
+    if (filter === 'pending') return d.status === 'pending'
+    if (filter === 'completed') return d.status !== 'pending'
+    return true
+  })
+
   const mapDeliveries = deliveries.filter(d => d.latitude && d.longitude)
   const mapCenter = mapDeliveries.length > 0
     ? [mapDeliveries[0].latitude, mapDeliveries[0].longitude]
@@ -116,32 +131,53 @@ const DeliveryList = () => {
   }
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6">
+    <div className="max-w-2xl mx-auto">
+      <div className="flex items-center justify-between mb-4">
         <div>
-          <h1 className="page-header">My Deliveries</h1>
-          <p className="page-subtitle">{formatDate(today)} · {done}/{deliveries.length} completed</p>
+          <h1 className="text-xl font-black text-white tracking-tight">My Deliveries</h1>
+          <p className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">
+            {formatDate(today)} · <span className="text-dairy-green-400">{done}/{deliveries.length} DONE</span>
+          </p>
         </div>
-        <button onClick={load} className="btn-secondary p-3"><MdRefresh /></button>
+        <button onClick={load} className="btn-secondary h-9 w-9 flex items-center justify-center p-0 rounded-xl"><MdRefresh className="text-lg" /></button>
       </div>
 
       {/* Progress */}
       {deliveries.length > 0 && (
-        <DeliveryProgressBar total={deliveries.length} done={done}>
-          <span className="text-dairy-green-400">✓ {done} done</span>
-          <span className="text-amber-400">⏳ {pending} left</span>
-        </DeliveryProgressBar>
+        <div className="mb-4">
+          <DeliveryProgressBar total={deliveries.length} done={done} compact>
+            <span className="text-dairy-green-400 font-black text-[10px] uppercase tracking-tighter">✓ {done} done</span>
+            <span className="text-amber-400 font-black text-[10px] uppercase tracking-tighter">⏳ {pending} left</span>
+          </DeliveryProgressBar>
+        </div>
       )}
 
+      {/* Filters */}
+      <div className="flex gap-1.5 mb-4 overflow-x-auto whitespace-nowrap pb-1 scrollbar-hide">
+        {[
+          { id: 'all', label: 'All', count: deliveries.length },
+          { id: 'pending', label: 'Pending', count: pending },
+          { id: 'completed', label: 'Completed', count: done },
+        ].map(f => (
+          <button
+            key={f.id}
+            onClick={() => setFilter(f.id)}
+            className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
+              filter === f.id 
+                ? 'bg-dairy-green-700 text-white shadow-lg shadow-dairy-green-900/30' 
+                : 'bg-slate-800 text-slate-500 hover:bg-slate-700'
+            }`}
+          >
+            {f.label} <span className="opacity-50 ml-0.5">{f.count}</span>
+          </button>
+        ))}
+      </div>
+
       {/* Map View */}
-      {mapDeliveries.length > 0 && (
-        <div className="mb-6">
-          <div className="flex items-center justify-between mb-2">
-            <h2 className="text-sm font-semibold text-slate-300">Route Map</h2>
-            <span className="text-xs text-slate-500">{mapDeliveries.length} destinations</span>
-          </div>
-          <div style={{ height: 300 }} className="rounded-2xl overflow-hidden border border-slate-700">
-            <MapContainer center={mapCenter} zoom={14} style={{ height: '100%', width: '100%' }}>
+      {mapDeliveries.length > 0 && filter === 'all' && (
+        <div className="mb-4 animate-fade-in">
+          <div style={{ height: 200 }} className="rounded-xl overflow-hidden border border-slate-700/50 grayscale-[0.5] contrast-[1.1]">
+            <MapContainer center={mapCenter} zoom={14} style={{ height: '100%', width: '100%' }} zoomControl={false}>
               <TileLayer
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 attribution='&copy; OpenStreetMap'
@@ -155,19 +191,13 @@ const DeliveryList = () => {
                   <Popup>
                     <div className="text-sm min-w-[180px]">
                       <p className="font-bold text-slate-800 mb-1">{d.customerName}</p>
-                      <p className="text-slate-600 text-xs mb-1">{d.customerAddress}</p>
-                      <p className="text-slate-600 text-xs mb-2">Milk: <strong>{formatMl(d.milkScheduledMl)}</strong></p>
-                      <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium mb-2 ${
-                        d.status === 'delivered' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
-                      }`}>{d.status === 'delivered' ? '✓ Delivered' : '⏳ Pending'}</span>
-                      {d.status !== 'delivered' && (
-                        <button
-                          onClick={() => navigateTo(d.latitude, d.longitude, d.locationUrl)}
-                          className="flex items-center gap-1 text-xs bg-blue-600 text-white px-2 py-1 rounded-lg hover:bg-blue-700 transition-colors w-full justify-center mt-1"
-                        >
-                          <MdNavigation /> Navigate
-                        </button>
-                      )}
+                      <p className="text-slate-600 text-[10px] mb-2 leading-tight">{d.customerAddress}</p>
+                      <button
+                        onClick={() => navigateTo(d.latitude, d.longitude, d.locationUrl)}
+                        className="flex items-center gap-1 text-[10px] font-bold bg-blue-600 text-white px-2 py-1.5 rounded-lg w-full justify-center"
+                      >
+                        <MdNavigation /> NAVIGATE
+                      </button>
                     </div>
                   </Popup>
                 </Marker>
@@ -179,31 +209,47 @@ const DeliveryList = () => {
 
       {loading ? (
         <div className="flex items-center justify-center h-40"><div className="w-8 h-8 border-2 border-dairy-green-500 border-t-transparent rounded-full animate-spin" /></div>
-      ) : deliveries.length === 0 ? (
-        <div className="card text-center py-16">
-          <MdLocalShipping className="text-5xl text-slate-600 mx-auto mb-3" />
-          <p className="text-slate-500">No deliveries assigned to you today</p>
+      ) : filtered.length === 0 ? (
+        <div className="card text-center py-12">
+          <MdLocalShipping className="text-5xl text-slate-700 mx-auto mb-2 opacity-50" />
+          <p className="text-slate-500 uppercase font-black tracking-widest text-[10px]">No results in {filter}</p>
         </div>
       ) : (
-        <div className="space-y-3">
-          {deliveries.map(d => (
-            <div key={d.id} className={`card ${d.status === 'delivered' ? 'border border-dairy-green-700/40' : d.status === 'skipped' ? 'border border-red-700/30 opacity-60' : 'border border-slate-700'}`}>
-              <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <p className="font-semibold text-white">{d.customerName}</p>
-                    {d.status === 'delivered' && <MdCheckCircle className="text-dairy-green-400" />}
+        <div className="space-y-2.5 mb-20">
+          {filtered.map(d => (
+            <div key={d.id} className={`p-3 rounded-2xl bg-slate-900/40 border transition-all ${
+              d.status === 'delivered' ? 'border-dairy-green-700/30' : 
+              d.status === 'skipped' ? 'border-red-700/20 opacity-60' : 
+              'border-slate-800 shadow-xl'
+            }`}>
+              <div className="flex flex-col gap-3">
+                <div className="flex justify-between items-start gap-2">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <p className="font-bold text-white text-base leading-tight truncate">{d.customerName}</p>
+                      {d.status === 'delivered' && <MdCheckCircle className="text-dairy-green-400 shrink-0" />}
+                    </div>
+                    <p className="text-[11px] text-slate-500 leading-snug line-clamp-2 break-words">
+                      {d.customerAddress}
+                    </p>
                   </div>
-                  <p className="text-sm text-slate-400">{d.customerAddress}</p>
-                  <div className="flex items-center gap-3 mt-2">
-                    <span className="badge-blue">{formatMl(d.milkScheduledMl)}</span>
-                    {d.status === 'delivered' && <span className="badge-green">Delivered {formatMl(d.milkDeliveredMl)}</span>}
-                    {/* {d.status === 'delivered' && d.photoUrl && (
-                      <a href={d.photoUrl} target="_blank" rel="noreferrer" className="text-xs text-blue-400 hover:text-blue-300 underline">View Photo</a>
-                    )} */}
-                    {d.status === 'pending' && <span className="badge-amber">Pending</span>}
-                    {d.status === 'skipped' && <span className="badge-red">Skipped</span>}
+                  <div className="text-right shrink-0">
+                    <p className="text-xs font-black text-dairy-green-400 tracking-tighter">{formatMl(d.milkScheduledMl)}</p>
+                    <p className="text-[9px] font-bold text-slate-600 uppercase tracking-widest">{d.status}</p>
                   </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  {d.status === 'delivered' && (
+                    <span className="text-[10px] font-bold text-dairy-green-500 bg-dairy-green-500/10 px-2 py-0.5 rounded-full uppercase tracking-tighter">
+                      ✓ Received {formatMl(d.milkDeliveredMl)}
+                    </span>
+                  )}
+                  {d.status === 'skipped' && (
+                    <span className="text-[10px] font-bold text-red-400 bg-red-400/10 px-2 py-0.5 rounded-full uppercase tracking-tighter">
+                      Skipped: {d.skipReason}
+                    </span>
+                  )}
                 </div>
 
                 {d.status === 'pending' && (

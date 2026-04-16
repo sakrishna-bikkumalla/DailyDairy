@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { MdInbox } from 'react-icons/md'
 import { useAuth } from '../../contexts/AuthContext'
 import { getCustomerRequests } from '../../services/requestService'
+import { getDeliveriesByCustomer } from '../../services/deliveryService'
 import { formatDate, formatDateTime } from '../../utils/dateUtils'
 import { formatMl } from '../../utils/mlUtils'
 import toast from 'react-hot-toast'
@@ -17,17 +18,22 @@ const reqTypeInfo = {
 const RequestHistory = () => {
   const { user } = useAuth()
   const [requests, setRequests] = useState([])
+  const [deliveries, setDeliveries] = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     if (!user?.linkedId) { setLoading(false); return }
     const load = async () => {
       try {
-        const reqs = await getCustomerRequests(user.linkedId)
+        const [reqs, dels] = await Promise.all([
+          getCustomerRequests(user.linkedId),
+          getDeliveriesByCustomer(user.linkedId)
+        ])
         setRequests(reqs)
+        setDeliveries(dels)
       } catch (e) {
         console.error("Fetch history error:", e)
-        toast.error('Failed to load request history: ' + e.message)
+        toast.error('Failed to load history: ' + e.message)
       } finally {
         setLoading(false)
       }
@@ -89,11 +95,51 @@ const RequestHistory = () => {
                     
                     {r.reason && <p className="text-slate-400 text-xs mt-2 italic">Reason: {r.reason}</p>}
                     
-                    {r.status === 'approved' && (
-                      <div className="mt-3 p-2 bg-dairy-green-900/20 border border-dairy-green-700/30 rounded-lg">
-                        <p className="text-dairy-green-400 text-xs font-medium">✓ Your request has been approved.</p>
-                      </div>
-                    )}
+                    {r.status === 'approved' && (() => {
+                      const delivery = deliveries.find(d => d.requestId === r.id)
+                      const showDeliveryStatus = ['extra_milk', 'morning_milk', 'evening_milk', 'custom'].includes(r.requestType)
+                      
+                      return (
+                        <div className="mt-3 overflow-hidden rounded-lg border border-dairy-green-700/30">
+                          <div className="p-2.5 bg-dairy-green-900/10 flex justify-between items-center">
+                            <p className="text-dairy-green-400 text-xs font-black tracking-wider flex items-center gap-1.5 uppercase">
+                              <span className="w-1.5 h-1.5 rounded-full bg-dairy-green-500 animate-pulse" />
+                              Approved Request & Fulfillment
+                            </p>
+                          </div>
+                          
+                          {showDeliveryStatus && (
+                            <div className="p-3 bg-slate-900/50 flex flex-col gap-2.5">
+                              <div className="flex justify-between items-center text-xs">
+                                <span className="text-slate-500 font-medium">Delivery Status</span>
+                                {delivery ? (
+                                  <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest ${
+                                    delivery.status === 'delivered' ? 'bg-dairy-green-500/20 text-dairy-green-400' : 
+                                    delivery.status === 'skipped' ? 'bg-red-500/20 text-red-500' : 
+                                    'bg-amber-500/20 text-amber-500'
+                                  }`}>
+                                    {delivery.status}
+                                  </span>
+                                ) : (
+                                  <span className="text-slate-600 italic">Connecting to route...</span>
+                                )}
+                              </div>
+                              
+                              {delivery?.status === 'delivered' && (
+                                <div className="flex justify-between items-center text-[10px] text-slate-400 border-t border-slate-800 pt-2">
+                                  <span>Quantity Received: {formatMl(delivery.milkDeliveredMl)}</span>
+                                  {delivery.deliveredAt && <span>Time: {formatDateTime(delivery.deliveredAt).split(' ')[1]}</span>}
+                                </div>
+                              )}
+
+                              {delivery?.status === 'skipped' && (
+                                <p className="text-[10px] text-red-400 italic">No delivery: {delivery.skipReason || 'Agent skipped'}</p>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })()}
                     
                     {r.status === 'rejected' && (
                       <div className="mt-3 p-2 bg-red-900/10 border border-red-900/30 rounded-lg">
