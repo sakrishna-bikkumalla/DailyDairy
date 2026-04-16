@@ -13,6 +13,7 @@ import DailyDeliveries from './pages/admin/DailyDeliveries'
 import Requests from './pages/admin/Requests'
 import Subscriptions from './pages/admin/Subscriptions'
 import CustomerDashboard from './pages/customer/CustomerDashboard'
+import CustomerSubscriptions from './pages/customer/Subscriptions'
 import SubmitRequest from './pages/customer/SubmitRequest'
 import RequestHistory from './pages/customer/RequestHistory'
 import DeliveryHistory from './pages/customer/DeliveryHistory'
@@ -76,6 +77,7 @@ function App() {
             </ProtectedRoute>
           }>
             <Route path="dashboard" element={<CustomerDashboard />} />
+            <Route path="subscriptions" element={<CustomerSubscriptions />} />
             <Route path="request" element={<SubmitRequest />} />
             <Route path="requests" element={<RequestHistory />} />
             <Route path="history" element={<DeliveryHistory />} />

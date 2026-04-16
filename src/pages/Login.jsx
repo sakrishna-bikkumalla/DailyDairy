@@ -3,20 +3,14 @@ import { useNavigate, Link } from 'react-router-dom'
 import { GiMilkCarton } from 'react-icons/gi'
 import { MdPhone, MdLock, MdLogin } from 'react-icons/md'
 import { useAuth } from '../contexts/AuthContext'
-import { loginWithPhone, seedDemoData, clearDemoData } from '../services/authService'
+import { loginWithPhone } from '../services/authService'
 import toast from 'react-hot-toast'
-
-const demoAccounts = [
-  { label: 'Admin', phone: '9999900001', password: 'admin123', role: 'admin', color: 'bg-dairy-green-700 hover:bg-dairy-green-600' },
-  { label: 'Customer', phone: '9876543210', password: 'cust123', role: 'customer', color: 'bg-blue-700 hover:bg-blue-600' },
-  { label: 'Agent', phone: '9111100001', password: 'agent123', role: 'agent', color: 'bg-amber-700 hover:bg-amber-600' },
-]
 
 const Login = () => {
   const [phone, setPhone] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
-  const [seeding, setSeeding] = useState(false)
+  const [role, setRole] = useState('admin')
   const { login } = useAuth()
   const navigate = useNavigate()
 
@@ -26,6 +20,11 @@ const Login = () => {
     setLoading(true)
     try {
       const user = await loginWithPhone(phone, password)
+      if (user.role !== role) {
+        toast.error(`Please login from the ${user.role} tab`)
+        setLoading(false)
+        return
+      }
       login(user)
       toast.success(`Welcome back, ${user.name.split(' ')[0]}!`)
       if (user.role === 'admin') navigate('/admin/dashboard')
@@ -33,48 +32,6 @@ const Login = () => {
       else if (user.role === 'agent') navigate('/agent/dashboard')
     } catch (err) {
       toast.error(err.message || 'Login failed')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleDemoLogin = async (acc) => {
-    setLoading(true)
-    try {
-      const user = await loginWithPhone(acc.phone, acc.password)
-      login(user)
-      toast.success(`Demo login as ${acc.label}`)
-      if (user.role === 'admin') navigate('/admin/dashboard')
-      else if (user.role === 'customer') navigate('/customer/dashboard')
-      else if (user.role === 'agent') navigate('/agent/dashboard')
-    } catch {
-      toast.error('Demo data not seeded yet. Click "Seed Demo Data" first.')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleSeed = async () => {
-    setSeeding(true)
-    try {
-      const result = await seedDemoData()
-      if (result.alreadySeeded) toast.success('Demo data already exists!')
-      else toast.success(`Seeded ${result.customers} customers, ${result.agents} agents`)
-    } catch (err) {
-      toast.error('Seed failed: ' + err.message)
-    } finally {
-      setSeeding(false)
-    }
-  }
-
-  const handleClear = async () => {
-    if (!window.confirm('Are you sure you want to remove all demo data? This will delete seeded users, customers, and their related records.')) return
-    setLoading(true)
-    try {
-      const result = await clearDemoData()
-      toast.success(`Removed demo records successfully.`)
-    } catch (err) {
-      toast.error('Clear failed: ' + err.message)
     } finally {
       setLoading(false)
     }
@@ -134,9 +91,22 @@ const Login = () => {
 
         <div className="w-full max-w-md">
           <div className="card p-8 lg:p-10 border-white/10 shadow-[0_32px_64px_rgba(0,0,0,0.5)]">
-            <div className="mb-10 text-center lg:text-left">
+            <div className="mb-8 text-center lg:text-left">
               <h2 className="text-3xl font-bold text-white tracking-tight">Welcome back</h2>
-              <p className="text-slate-500 mt-2 font-medium">Sign in with your phone number</p>
+              <p className="text-slate-500 mt-2 font-medium">Sign In to your {role} account</p>
+            </div>
+
+            <div className="flex bg-slate-900/50 p-1 rounded-xl mb-8 border border-white/5">
+              {['admin', 'customer', 'agent'].map((r) => (
+                <button
+                  key={r}
+                  type="button"
+                  onClick={() => setRole(r)}
+                  className={`flex-1 py-2.5 text-xs font-bold rounded-lg capitalize transition-all ${role === r ? 'bg-dairy-green-600 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+                >
+                  {r}
+                </button>
+              ))}
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
@@ -181,39 +151,31 @@ const Login = () => {
               </div>
             </form>
 
-            {/* Demo section */}
-            <div className="mt-12 pt-8 border-t border-white/5">
-              <p className="text-[10px] text-slate-500 text-center mb-6 font-black uppercase tracking-[0.2em]">Quick Access</p>
-              <div className="grid grid-cols-3 gap-3 mb-6">
-                {demoAccounts.map(acc => (
-                  <button
-                    key={acc.role}
-                    onClick={() => handleDemoLogin(acc)}
-                    disabled={loading}
-                    className="bg-white/5 hover:bg-white/10 text-white text-[11px] font-bold py-3 rounded-xl border border-white/5 hover:border-white/10 transition-all duration-300 hover:scale-105 active:scale-95 shadow-lg"
-                  >
-                    {acc.label}
-                  </button>
-                ))}
-              </div>
-              <button
-                onClick={handleSeed}
-                disabled={seeding || loading}
-                className="w-full text-[10px] font-bold text-slate-500 hover:text-dairy-green-400 py-3 border border-white/5 hover:border-dairy-green-500/30 rounded-xl transition-all duration-300 uppercase tracking-widest bg-white/5 hover:bg-dairy-green-500/5 mb-2"
-              >
-                {seeding ? '⏳ Seeding...' : '🌱 Seed Demo Data'}
-              </button>
-              <button
-                onClick={handleClear}
-                disabled={loading}
-                className="w-full text-[10px] font-bold text-slate-500 hover:text-red-400 py-3 border border-white/5 hover:border-red-500/30 rounded-xl transition-all duration-300 uppercase tracking-widest bg-white/5 hover:bg-red-500/5"
-              >
-                {loading ? '⏳ Clearing...' : '🗑️ Remove Demo Data'}
-              </button>
-              <div className="mt-6 p-4 bg-black/40 rounded-2xl border border-white/5 text-[11px] text-slate-500 space-y-2 font-medium">
-                <p className="flex justify-between items-center"><span>Admin:</span> <span className="text-slate-300 bg-white/5 px-2 py-0.5 rounded-md">8919332393 / 123456789</span></p>
-                <p className="flex justify-between items-center"><span>Customer:</span> <span className="text-slate-300 bg-white/5 px-2 py-0.5 rounded-md">9876543210 / cust123</span></p>
-                <p className="flex justify-between items-center"><span>Agent:</span> <span className="text-slate-300 bg-white/5 px-2 py-0.5 rounded-md">9111100001 / agent123</span></p>
+            {/* How to use */}
+            <div className="mt-10 pt-8 border-t border-white/5">
+              <p className="text-[10px] text-slate-500 text-center mb-6 font-black uppercase tracking-[0.2em]">HOW TO USE</p>
+              <div className="space-y-6">
+                <div className="flex items-start gap-4">
+                  <div className="w-6 h-6 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center flex-shrink-0 text-xs font-bold mt-0.5 shadow-inner border border-blue-500/20">1</div>
+                  <div>
+                    <h4 className="text-sm font-bold text-white">Register an Admin</h4>
+                    <p className="text-xs text-slate-400 mt-1.5 leading-relaxed font-medium">Click "Sign-up" above to create an Admin account for your dairy business. You'll use this to manage everything.</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-4">
+                  <div className="w-6 h-6 rounded-full bg-dairy-green-500/20 text-dairy-green-400 flex items-center justify-center flex-shrink-0 text-xs font-bold mt-0.5 shadow-inner border border-dairy-green-500/20">2</div>
+                  <div>
+                    <h4 className="text-sm font-bold text-white">Create Customers & Agents</h4>
+                    <p className="text-xs text-slate-400 mt-1.5 leading-relaxed font-medium">Login as the Admin to add your customers and delivery agents. They will automatically get accounts linked to their phone numbers.</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-4">
+                  <div className="w-6 h-6 rounded-full bg-amber-500/20 text-amber-500 flex items-center justify-center flex-shrink-0 text-xs font-bold mt-0.5 shadow-inner border border-amber-500/20">3</div>
+                  <div>
+                    <h4 className="text-sm font-bold text-white">Login as Customer/Agent</h4>
+                    <p className="text-xs text-slate-400 mt-1.5 leading-relaxed font-medium">Once the Admin creates them, Customers and Agents can log in here using their phone number and the password set by the Admin.</p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

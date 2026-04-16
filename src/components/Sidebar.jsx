@@ -19,6 +19,7 @@ const adminLinks = [
 
 const customerLinks = [
   { to: '/customer/dashboard', icon: MdDashboard, label: 'Dashboard' },
+  { to: '/customer/subscriptions', icon: MdAssignment, label: 'My Subscriptions' },
   { to: '/customer/request', icon: MdAdd, label: 'New Request' },
   { to: '/customer/requests', icon: MdInbox, label: 'My Requests' },
   { to: '/customer/history', icon: MdHistory, label: 'Delivery History' },
