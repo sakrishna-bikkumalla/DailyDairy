@@ -1,100 +1,84 @@
-# Daily Dairy: Smart Dairy Delivery Management System
+# Daily Dairy: Smart Dairy Delivery Management System 🥛🐄
 
-A full-stack, comprehensive web application built to digitize and streamline milk delivery operations for dairy vendors. The system supports three distinct roles—**Admin (Vendor)**, **Customer**, and **Delivery Agent**—each with their own tailored dashboards, features, and workflows.
+**Daily Dairy** is a professional-grade, mobile-first management platform designed to digitize and automate dairy delivery operations. Built for modern vendors, it provides a seamless bridge between admins, customers, and delivery agents through a "High-Density" information-rich interface.
 
 ---
 
-## 🚀 Features
+## 📱 Mobile-First "High-Density" UX
+Our design philosophy focuses on maximizing data visibility while maintaining a premium, "living" interface.
+- **Micro-Animations**: Real-time feedback and transitions for a responsive feel.
+- **Glassmorphism**: Sleek, translucent card designs optimized for dark mode environments.
+- **Adaptive Tables**: Legacy tables automatically transform into high-density card grids on mobile devices to prevent horizontal scrolling.
 
-### 🛡️ Admin (Vendor) Module
-* **Dashboard:** High-level analytics, including total customers, daily delivery progress, and pending requests.
-* **Customer Management:** Full CRUD operations for customers. Capture detailed addresses (Street/Colony, Landmark, Pincode, City, State, Country) and precise GPS locations via an interactive Leaflet map.
-* **Agent Management:** Add and manage delivery personnel.
-* **Daily Deliveries:** Dynamically generate delivery manifests for any given day based on active customer subscriptions. Assign specific agents to specific deliveries.
-* **Manage Subscriptions:** Easily track the lifetime value of every customer. Search customers by name or phone number, and click on them to view lifetime milk delivered, total revenue billed, and a chronological log of all historical deliveries.
-* **Customer Requests:** Review, approve, or reject customer requests (Extra Milk, Morning/Evening specifics, Pauses). Rejecting a request allows the admin to provide a concrete reason (e.g., "No Stock") which is communicated back to the user.
-* **Billing System:** Automated monthly billing calculator that aggregates completed deliveries and computes total amounts due per customer based on custom price-per-liter rates.
+---
 
-### 🥛 Customer Module
-* **Dashboard:** View upcoming scheduled deliveries at a glance.
-* **Submit Requests:** 
-  * Request *Extra Milk* or *Morning/Evening Milk*. 
-  * Submit *Custom Requests* specifying exact date, quantity, preferred time (Morning/Evening), and milk type (Cow/Buffalo).
-  * Request a *Pause* in delivery for a specified date range (e.g., going on vacation).
-* **Delivery History:** 
-  * View a visual log of all past deliveries.
-  * See photographic proof of delivery (photos taken by agents at the doorstep).
-* **Request History:** Check the status of special requests (Pending, Approved, Rejected) including polite feedback and rejection reasons from the admin.
+## 🚀 Core Modules
 
-### 🚚 Delivery Agent Module
-* **Agent Dashboard:** Track daily assigned deliveries and completion progress.
-* **Delivery Route:** View an interactive map (Leaflet) plotting all assigned customers for the day. Click on markers to access Google Maps navigation.
-* **Proof of Delivery:** Mark deliveries as completed, optionally adjusting the delivered quantity (e.g., if the customer requested less at the door), and upload a photo of the delivered milk as proof.
+### 🛡️ Admin (Vendor) Control Center
+- **Smart Manifests**: Dynamically generate delivery routes based on active subscriptions and approved requests.
+- **Agent Orchestration**: Real-time tracking of agent progress and delivery completion statuses.
+- **Subscription Lifecycle**: Comprehensive tracking of customer lifetime value (LTV), billing history, and delivery logs.
+- **Automated Billing**: End-of-month invoice calculation based on actual delivered quantities.
+
+### 🥛 Customer Experience
+- **Request Management**: Submit and track requests for extra milk, custom delivery times, or vacation pauses.
+- **Fulfillment Transparency**: Real-time visibility into whether an approved request has been delivered, skipped, or is still pending arrival.
+- **Delivery Proof**: Direct access to photographic proof of delivery and historical logs.
+
+### 🚚 Delivery Agent Interface
+- **Optimized Routes**: High-density manifest lists with integrated Leaflet maps and Google Maps navigation.
+- **Smart Fulfillment**: One-tap "Mark as Done" with support for partial quantity adjustments and photo uploads.
+- **Auto-Focus Workflow**: Intelligent filters that automatically prioritize "Pending Arrival" tasks to keep agents focused on their next stop.
 
 ---
 
 ## 🛠️ Technology Stack
 
-* **Frontend:** React.js, Vite
-* **Styling:** Tailwind CSS (Custom dairy-themed color palette: greens, creams, ambers)
-* **Routing:** React Router v6 (Protected Routes based on User Roles)
-* **Mapping & Location:** Leaflet.js, React-Leaflet, OpenStreetMap
-* **Backend / Database:** Firebase Firestore (NoSQL Document Database)
-* **Authentication:** Firebase Auth
-* **Storage:** Cloudinary (for fast, reliable Delivery Photo uploads)
-* **Icons & UI:** React Icons, React Hot Toast
+- **Frontend**: React.js + Vite (optimized for speed)
+- **Styling**: Vanilla CSS + Tailwind CSS (Custom "Daily Dairy" Design System)
+- **Backend/DB**: Google Firebase (Firestore, Hosting)
+- **Authentication**: Custom Firestore-based logic (Phone Number + Password Hash)
+- **Mapping**: Leaflet / OpenStreetMap
+- **Storage**: Cloudinary (Proof of Delivery Image Storage)
 
 ---
 
-## 💻 How to Run Locally
+## 💻 Technical Setup
 
-### 1. Prerequisites
-Ensure you have the following installed on your machine:
-* [Node.js](https://nodejs.org/) (v16 or higher)
-* [npm](https://www.npmjs.com/) or [yarn]
+### Prerequisites
+- Node.js (v18+)
+- Firebase CLI (`npm install -g firebase-tools`)
 
-### 2. Clone the Repository
-If you haven't already, clone the project and navigate to the root directory:
-```bash
-git clone https://gitlab.com/dairyfoam-project/daily-dairy.git
-cd daily-dairy
-```
+### Initial Installation
+1. Clone and install:
+   ```bash
+   npm install
+   ```
+2. Set up environment variables in `.env`:
+   ```env
+   VITE_FIREBASE_API_KEY=...
+   VITE_FIREBASE_AUTH_DOMAIN=...
+   VITE_FIREBASE_PROJECT_ID=...
+   VITE_CLOUDINARY_CLOUD_NAME=...
+   ```
 
-### 3. Install Dependencies
-Install all required NPM packages:
-```bash
-npm install
-```
-
-### 4. Environment Setup
-The project relies on Firebase and Cloudinary. You must create a `.env` file in the root of the `daily-dairy` directory with your specific API keys:
-
-```env
-VITE_FIREBASE_API_KEY=your_api_key
-VITE_FIREBASE_AUTH_DOMAIN=your_project_id.firebaseapp.com
-VITE_FIREBASE_PROJECT_ID=your_project_id
-VITE_FIREBASE_STORAGE_BUCKET=your_project_id.appspot.com
-VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
-VITE_FIREBASE_APP_ID=your_app_id
-VITE_CLOUDINARY_CLOUD_NAME=your_cloudinary_name
-VITE_CLOUDINARY_UPLOAD_PRESET=your_upload_preset
-```
-
-### 5. Start the Development Server
-Run the Vite development server:
+### Local Development
 ```bash
 npm run dev
 ```
 
-### 6. View the App
-Open your browser and navigate to the local URL provided in your terminal, usually:
-```
-http://localhost:5173
+### Production Deployment
+```bash
+npm run build
+firebase deploy
 ```
 
 ---
 
-## 🔐 Login Roles (Demo)
-By default, the login page is equipped with a **Demo Login** section that allows you to bypass email/password entry and log in instantly as an Admin, Customer, or Agent using pre-seeded Firestore data to test the routing and permissions. 
+## 📖 Extended Documentation
+- [Architecture Overview](file:///home/saikrishna-bikkumalla/dev-projects/dairy%20app%202/DailyDairy/ARCHITECTURE.md)
+- [Mobile Design Standards](file:///home/saikrishna-bikkumalla/dev-projects/dairy%20app%202/DailyDairy/MOBILE_UX_STANDARDS.md)
+- [Deployment Guide](file:///home/saikrishna-bikkumalla/dev-projects/dairy%20app%202/DailyDairy/DEVELOPMENT.md)
 
-*Enjoy managing your dairy deliveries efficiently!* 🐄🥛
+---
+*Built with passion for the dairy industry.* 🐄🥛
